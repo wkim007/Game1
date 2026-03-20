@@ -871,35 +871,38 @@ private struct RankView: View {
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
             } else {
-                VStack(spacing: 8) {
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        HStack(alignment: .top) {
-                            Text("\(index + 1).")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.68))
-                                .frame(width: 26, alignment: .leading)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.name)
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.white)
-                                Text(Self.dateFormatter.string(from: entry.date))
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundStyle(.white.opacity(0.62))
-                                Text(entry.timeoutLabel)
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(Color(red: 0.56, green: 0.8, blue: 1.0))
-                                Text(entry.levelLabel)
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            HStack(alignment: .top) {
+                                Text("\(index + 1).")
+                                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.68))
+                                    .frame(width: 26, alignment: .leading)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.name)
+                                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                    Text(Self.dateFormatter.string(from: entry.date))
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundStyle(.white.opacity(0.62))
+                                    Text(entry.timeoutLabel)
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundStyle(Color(red: 0.56, green: 0.8, blue: 1.0))
+                                    Text(entry.levelLabel)
+                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
+                                }
+                                Spacer()
+                                Text("\(entry.score)")
+                                    .font(.system(size: 18, weight: .black, design: .rounded))
                                     .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
                             }
-                            Spacer()
-                            Text("\(entry.score)")
-                                .font(.system(size: 18, weight: .black, design: .rounded))
-                                .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
+                            .padding(.vertical, 6)
                         }
-                        .padding(.vertical, 6)
                     }
                 }
+                .frame(maxHeight: 360)
             }
         }
         .padding(20)
