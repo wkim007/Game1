@@ -18,7 +18,7 @@ struct ContentView: View {
     private var gameView: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.13, green: 0.15, blue: 0.18), Color(red: 0.08, green: 0.22, blue: 0.33)],
+                colors: [Color(red: 0.04, green: 0.04, blue: 0.08), Color(red: 0.11, green: 0.08, blue: 0.18)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -37,7 +37,7 @@ struct ContentView: View {
                             .foregroundStyle(.white)
                             .background(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(Color(red: 0.16, green: 0.27, blue: 0.35))
+                                    .fill(Color(red: 0.18, green: 0.16, blue: 0.27))
                             )
                     }
                     .buttonStyle(.plain)
@@ -177,8 +177,24 @@ private struct BoardView: View {
             VStack(spacing: 0) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color(red: 0.11, green: 0.14, blue: 0.18))
-                        .shadow(color: .black.opacity(0.28), radius: 20, y: 14)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(red: 0.16, green: 0.12, blue: 0.25), Color(red: 0.09, green: 0.08, blue: 0.16)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.4), radius: 24, y: 16)
+
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: boardWidth * 0.36)
+                        .blur(radius: 26)
+                        .offset(y: -boardHeight * 0.18)
 
                     VStack(spacing: 2) {
                         ForEach(board.indices, id: \.self) { row in
@@ -207,12 +223,56 @@ private struct CellView: View {
     let kind: BlockKind?
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
-            .fill(kind?.fillColor ?? Color.white.opacity(0.08))
-            .overlay {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(Color.white.opacity(kind == nil ? 0.04 : 0.18), lineWidth: 1)
+        ZStack {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(kind == nil ? Color(red: 0.17, green: 0.19, blue: 0.25) : kind!.fillColor)
+
+            if let kind {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(kind.shadowColor, lineWidth: 1.2)
+
+                VStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.34), Color.white.opacity(0.04)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(height: 4)
+                    Spacer(minLength: 0)
+                }
+                .padding(1)
+
+                HStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 3)
+                    Spacer(minLength: 0)
+                }
+                .padding(1)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(kind.shadowColor.opacity(0.9))
+                        .frame(height: 3)
+                }
+                .padding(1)
+
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(kind.shadowColor.opacity(0.9))
+                        .frame(width: 3)
+                }
+                .padding(1)
+            } else {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
             }
+        }
     }
 }
 
@@ -262,7 +322,11 @@ private struct MetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+        )
     }
 }
 
@@ -280,7 +344,13 @@ private struct IconControlButton: View {
                 .foregroundStyle(.white)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(red: 0.16, green: 0.27, blue: 0.35))
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(red: 0.26, green: 0.2, blue: 0.36), Color(red: 0.15, green: 0.14, blue: 0.23)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                 )
         }
         .buttonStyle(.plain)
@@ -354,19 +424,38 @@ private extension BlockKind {
     var fillColor: Color {
         switch self {
         case .i:
-            return Color(red: 0.19, green: 0.74, blue: 0.84)
+            return Color(red: 0.43, green: 0.9, blue: 0.93)
         case .o:
-            return Color(red: 0.95, green: 0.78, blue: 0.2)
+            return Color(red: 0.98, green: 0.84, blue: 0.28)
         case .t:
-            return Color(red: 0.82, green: 0.35, blue: 0.23)
+            return Color(red: 0.58, green: 0.4, blue: 0.95)
         case .s:
-            return Color(red: 0.34, green: 0.71, blue: 0.36)
+            return Color(red: 0.48, green: 0.86, blue: 0.34)
         case .z:
-            return Color(red: 0.86, green: 0.29, blue: 0.23)
+            return Color(red: 0.88, green: 0.3, blue: 0.25)
         case .j:
-            return Color(red: 0.27, green: 0.47, blue: 0.84)
+            return Color(red: 0.23, green: 0.47, blue: 0.93)
         case .l:
-            return Color(red: 0.92, green: 0.52, blue: 0.14)
+            return Color(red: 0.96, green: 0.52, blue: 0.2)
+        }
+    }
+
+    var shadowColor: Color {
+        switch self {
+        case .i:
+            return Color(red: 0.09, green: 0.44, blue: 0.55)
+        case .o:
+            return Color(red: 0.68, green: 0.5, blue: 0.1)
+        case .t:
+            return Color(red: 0.3, green: 0.2, blue: 0.58)
+        case .s:
+            return Color(red: 0.18, green: 0.47, blue: 0.13)
+        case .z:
+            return Color(red: 0.55, green: 0.14, blue: 0.12)
+        case .j:
+            return Color(red: 0.08, green: 0.2, blue: 0.56)
+        case .l:
+            return Color(red: 0.58, green: 0.28, blue: 0.08)
         }
     }
 
