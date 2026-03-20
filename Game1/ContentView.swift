@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
     @AppStorage("sound_enabled") private var soundEnabled = true
+    @AppStorage("vibration_enabled") private var vibrationEnabled = true
     @AppStorage("show_next_piece") private var showNextPiece = true
     @State private var showingSettings = false
 
@@ -50,6 +51,9 @@ struct ContentView: View {
                         .overlay(alignment: .center) {
                             overlayText
                         }
+                        .overlay(alignment: .top) {
+                            lineClearOverlay
+                        }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     rightSidebar
@@ -74,6 +78,7 @@ struct ContentView: View {
 
             SettingsView(
                 soundEnabled: $soundEnabled,
+                vibrationEnabled: $vibrationEnabled,
                 showNextPiece: $showNextPiece,
                 onClose: { showingSettings = false }
             )
@@ -121,6 +126,21 @@ struct ContentView: View {
                 messageCard(title: "Paused", subtitle: "Resume when ready")
             }
         }
+    }
+
+    private var lineClearOverlay: some View {
+        Group {
+            if let effect = viewModel.lineClearEffect {
+                LineClearEffectView(effect: effect)
+                    .padding(.top, 18)
+                    .transition(.asymmetric(
+                        insertion: .offset(y: 6).combined(with: .opacity),
+                        removal: .offset(y: -24).combined(with: .opacity)
+                    ))
+            }
+        }
+        .animation(.easeOut(duration: 0.22), value: viewModel.lineClearEffect)
+        .allowsHitTesting(false)
     }
 
     private var controls: some View {
@@ -330,6 +350,37 @@ private struct MetricCard: View {
     }
 }
 
+private struct LineClearEffectView: View {
+    let effect: LineClearEffect
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text("+\(effect.points)")
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundStyle(Color(red: 1.0, green: 0.86, blue: 0.3))
+
+            Text(effect.lines == 4 ? "TETRIS" : "LINE CLEAR")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.82))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.3, green: 0.18, blue: 0.42), Color(red: 0.16, green: 0.1, blue: 0.23)],
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            in: Capsule()
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+        )
+        .shadow(color: Color(red: 1.0, green: 0.82, blue: 0.22).opacity(0.22), radius: 12, y: 4)
+    }
+}
+
 private struct IconControlButton: View {
     let systemImage: String
     var width: CGFloat = 64
@@ -359,6 +410,7 @@ private struct IconControlButton: View {
 
 private struct SettingsView: View {
     @Binding var soundEnabled: Bool
+    @Binding var vibrationEnabled: Bool
     @Binding var showNextPiece: Bool
     let onClose: () -> Void
 
@@ -384,6 +436,17 @@ private struct SettingsView: View {
             Toggle(isOn: $soundEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sound Effects")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                }
+                .foregroundStyle(.white)
+            }
+            .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+            .padding(18)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            Toggle(isOn: $vibrationEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Vibration")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(.white)

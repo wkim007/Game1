@@ -1,8 +1,15 @@
 import Foundation
 
+struct LineClearEffect: Identifiable, Equatable {
+    let id = UUID()
+    let points: Int
+    let lines: Int
+}
+
 @MainActor
 final class GameViewModel: ObservableObject {
     @Published private(set) var snapshot: GameSnapshot
+    @Published private(set) var lineClearEffect: LineClearEffect?
 
     private var engine = TetrisEngine()
     private var timer: Timer?
@@ -54,8 +61,10 @@ final class GameViewModel: ObservableObject {
 
     private func apply(_ events: [GameEvent], reschedule: Bool = false) {
         let previousLevel = snapshot.level
-        refresh()
-        handle(events)
+        let previousScore = snapshot.score
+        let updatedSnapshot = engine.snapshot
+        handle(events, scoreDelta: updatedSnapshot.score - previousScore)
+        snapshot = updatedSnapshot
 
         if reschedule || snapshot.level != previousLevel {
             restartTimer()
@@ -77,7 +86,7 @@ final class GameViewModel: ObservableObject {
         }
     }
 
-    private func handle(_ events: [GameEvent]) {
+    private func handle(_ events: [GameEvent], scoreDelta: Int) {
         for event in events {
             switch event {
             case .moved:
@@ -86,12 +95,26 @@ final class GameViewModel: ObservableObject {
                 SoundEffectPlayer.shared.play(.rotate)
             case .hardDropped:
                 SoundEffectPlayer.shared.play(.hardDrop)
-            case .lineClear:
+            case .lineClear(let lines):
                 SoundEffectPlayer.shared.play(.lineClear)
+                HapticManager.shared.playLineClear(lines: lines)
+                showLineClearEffect(points: max(scoreDelta, 0), lines: lines)
             case .gameOver:
                 SoundEffectPlayer.shared.play(.gameOver)
             case .locked:
                 break
+            }
+        }
+    }
+
+    private func showLineClearEffect(points: Int, lines: Int) {
+        let effect = LineClearEffect(points: points, lines: lines)
+        lineClearEffect = effect
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 650_000_000)
+            if lineClearEffect?.id == effect.id {
+                lineClearEffect = nil
             }
         }
     }
