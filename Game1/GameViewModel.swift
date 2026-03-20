@@ -11,6 +11,8 @@ final class GameViewModel: ObservableObject {
     private enum SettingsKeys {
         static let timeoutEnabled = "timeout_enabled"
         static let timeoutSeconds = "timeout_seconds"
+        static let manualLevelEnabled = "manual_level_enabled"
+        static let manualLevelValue = "manual_level_value"
     }
 
     @Published private(set) var snapshot: GameSnapshot
@@ -20,6 +22,7 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var highScores: [HighScoreEntry] = HighScoreStore.shared.load()
     @Published var pendingHighScoreName = ""
     @Published private(set) var showingHighScoreEntry = false
+    @Published private(set) var showingHighScoreCelebration = false
 
     private var engine = TetrisEngine()
     private var timer: Timer?
@@ -28,6 +31,7 @@ final class GameViewModel: ObservableObject {
     private var runStartedAt: Date?
 
     init() {
+        engine.setManualLevel(Self.initialManualLevelFromDefaults())
         snapshot = engine.snapshot
         runStartedAt = .now
         restartTimer()
@@ -78,21 +82,30 @@ final class GameViewModel: ObservableObject {
         runStartedAt = .now
         timeoutTriggered = false
         showingHighScoreEntry = false
+        showingHighScoreCelebration = false
         pendingHighScoreName = ""
+        applyGameplaySettings()
         refresh()
         restartTimer()
         restartTimeoutTimer()
     }
 
     func saveHighScore() {
-        HighScoreStore.shared.save(name: pendingHighScoreName, score: snapshot.score, timeoutLabel: timeoutLabel)
+        HighScoreStore.shared.save(
+            name: pendingHighScoreName,
+            score: snapshot.score,
+            timeoutLabel: timeoutLabel,
+            levelLabel: "Level \(snapshot.level)"
+        )
         highScores = HighScoreStore.shared.load()
         showingHighScoreEntry = false
+        showingHighScoreCelebration = false
         pendingHighScoreName = ""
     }
 
     func dismissHighScoreEntry() {
         showingHighScoreEntry = false
+        showingHighScoreCelebration = false
         pendingHighScoreName = ""
     }
 
@@ -108,6 +121,21 @@ final class GameViewModel: ObservableObject {
             runStartedAt = .now
         }
         restartTimeoutTimer()
+    }
+
+    func refreshGameplaySettings() {
+        let previousLevel = snapshot.level
+        applyGameplaySettings()
+        refresh()
+
+        if snapshot.level != previousLevel {
+            restartTimer()
+        }
+    }
+
+    func resetHighScores() {
+        HighScoreStore.shared.reset()
+        highScores = []
     }
 
     private func tick() {
@@ -132,6 +160,10 @@ final class GameViewModel: ObservableObject {
 
     private func refresh() {
         snapshot = engine.snapshot
+    }
+
+    private func applyGameplaySettings() {
+        engine.setManualLevel(manualLevelEnabled ? manualLevelValue : nil)
     }
 
     private func restartTimer() {
@@ -193,6 +225,23 @@ final class GameViewModel: ObservableObject {
         timeoutEnabled ? "\(timeoutSeconds) sec" : "Unlimited"
     }
 
+    private var manualLevelEnabled: Bool {
+        UserDefaults.standard.bool(forKey: SettingsKeys.manualLevelEnabled)
+    }
+
+    private var manualLevelValue: Int {
+        let stored = UserDefaults.standard.integer(forKey: SettingsKeys.manualLevelValue)
+        return stored == 0 ? 1 : min(max(stored, 1), 100)
+    }
+
+    private static func initialManualLevelFromDefaults() -> Int? {
+        let defaults = UserDefaults.standard
+        let enabled = defaults.bool(forKey: SettingsKeys.manualLevelEnabled)
+        let stored = defaults.integer(forKey: SettingsKeys.manualLevelValue)
+        let level = stored == 0 ? 1 : min(max(stored, 1), 100)
+        return enabled ? level : nil
+    }
+
     private var activeRunElapsed: TimeInterval {
         guard let runStartedAt else { return 0 }
         return Date().timeIntervalSince(runStartedAt)
@@ -219,6 +268,18 @@ final class GameViewModel: ObservableObject {
 
         if snapshot.score > HighScoreStore.shared.highestScore() {
             showingHighScoreEntry = true
+            triggerHighScoreCelebration()
+        }
+    }
+
+    private func triggerHighScoreCelebration() {
+        showingHighScoreCelebration = true
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            if showingHighScoreEntry {
+                showingHighScoreCelebration = false
+            }
         }
     }
 

@@ -47,6 +47,7 @@ struct TetrisEngine {
     private(set) var clearedLines = 0
     private(set) var isPaused = false
     private(set) var isGameOver = false
+    private var manualLevelOverride: Int?
 
     private var bag: [BlockKind] = []
 
@@ -61,7 +62,7 @@ struct TetrisEngine {
     }
 
     var level: Int {
-        max(1, (clearedLines / 10) + 1)
+        manualLevelOverride ?? max(1, (clearedLines / 10) + 1)
     }
 
     var dropInterval: TimeInterval {
@@ -160,6 +161,10 @@ struct TetrisEngine {
         guard !isGameOver else { return [] }
         isGameOver = true
         return [.gameOver]
+    }
+
+    mutating func setManualLevel(_ level: Int?) {
+        manualLevelOverride = level.map { min(max($0, 1), 100) }
     }
 
     private mutating func lockActivePiece() -> [GameEvent] {

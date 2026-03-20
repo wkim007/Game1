@@ -7,8 +7,11 @@ struct ContentView: View {
     @AppStorage("show_next_piece") private var showNextPiece = true
     @AppStorage("timeout_enabled") private var timeoutEnabled = false
     @AppStorage("timeout_seconds") private var timeoutSeconds = 60
+    @AppStorage("manual_level_enabled") private var manualLevelEnabled = false
+    @AppStorage("manual_level_value") private var manualLevelValue = 1
     @State private var showingSettings = false
     @State private var showingRanks = false
+    @State private var showingResetRanksConfirmation = false
 
     var body: some View {
         gameView
@@ -18,6 +21,15 @@ struct ContentView: View {
             .onChange(of: timeoutSeconds) { _, _ in
                 viewModel.refreshTimeoutSettings()
             }
+            .onChange(of: manualLevelEnabled) { _, _ in
+                if manualLevelEnabled {
+                    manualLevelValue = 1
+                }
+                viewModel.refreshGameplaySettings()
+            }
+            .onChange(of: manualLevelValue) { _, _ in
+                viewModel.refreshGameplaySettings()
+            }
             .overlay {
                 ZStack {
                     if showingSettings {
@@ -26,8 +38,14 @@ struct ContentView: View {
                     if showingRanks {
                         rankOverlay
                     }
+                    if showingResetRanksConfirmation {
+                        resetRanksOverlay
+                    }
                     if viewModel.showingHighScoreEntry {
                         highScoreOverlay
+                    }
+                    if viewModel.showingHighScoreCelebration {
+                        highScoreCelebrationOverlay
                     }
                 }
             }
@@ -93,6 +111,9 @@ struct ContentView: View {
                 showNextPiece: $showNextPiece,
                 timeoutEnabled: $timeoutEnabled,
                 timeoutSeconds: $timeoutSeconds,
+                manualLevelEnabled: $manualLevelEnabled,
+                manualLevelValue: $manualLevelValue,
+                onResetRanks: { showingResetRanksConfirmation = true },
                 onClose: { showingSettings = false }
             )
         } backgroundTap: {
@@ -108,6 +129,26 @@ struct ContentView: View {
         }
     }
 
+    private var resetRanksOverlay: some View {
+        popupOverlay {
+            ConfirmationView(
+                title: "Reset Rank",
+                message: "Are you sure you want to delete all saved rank records?",
+                confirmTitle: "OK",
+                cancelTitle: "Cancel",
+                onConfirm: {
+                    viewModel.resetHighScores()
+                    showingResetRanksConfirmation = false
+                    showingSettings = false
+                    showingRanks = false
+                },
+                onCancel: { showingResetRanksConfirmation = false }
+            )
+        } backgroundTap: {
+            showingResetRanksConfirmation = false
+        }
+    }
+
     private var highScoreOverlay: some View {
         popupOverlay {
             HighScoreEntryView(
@@ -117,6 +158,16 @@ struct ContentView: View {
                 onClose: { viewModel.dismissHighScoreEntry() }
             )
         } backgroundTap: {}
+    }
+
+    private var highScoreCelebrationOverlay: some View {
+        VStack {
+            FlashCongratulationsView()
+                .padding(.top, 84)
+            Spacer()
+        }
+        .allowsHitTesting(false)
+        .transition(.opacity)
     }
 
     private var leftSidebar: some View {
@@ -188,30 +239,30 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                IconControlButton(systemImage: "arrow.left", width: 56, height: 46) {
+        VStack(spacing: 14) {
+            HStack(spacing: 14) {
+                IconControlButton(systemImage: "arrow.left", width: 70, height: 58) {
                     viewModel.moveLeft()
                 }
-                IconControlButton(systemImage: "rotate.right", width: 56, height: 46) {
+                IconControlButton(systemImage: "rotate.right", width: 70, height: 58) {
                     viewModel.rotate()
                 }
-                IconControlButton(systemImage: "arrow.right", width: 56, height: 46) {
+                IconControlButton(systemImage: "arrow.right", width: 70, height: 58) {
                     viewModel.moveRight()
                 }
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 14) {
                 Spacer()
-                    .frame(width: 64)
-                IconControlButton(systemImage: "arrow.down.to.line", width: 56, height: 46) {
+                    .frame(width: 84)
+                IconControlButton(systemImage: "arrow.down.to.line", width: 70, height: 58) {
                     viewModel.hardDrop()
                 }
                 Spacer()
-                    .frame(width: 64)
+                    .frame(width: 84)
             }
         }
-        .padding(.top, 18)
+        .padding(.top, 24)
     }
 
     private func messageCard(title: String, subtitle: String) -> some View {
@@ -456,19 +507,67 @@ private struct IconControlButton: View {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .bold))
                 .frame(width: width, height: height)
-                .foregroundStyle(.white)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(red: 0.26, green: 0.2, blue: 0.36), Color(red: 0.15, green: 0.14, blue: 0.23)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ArcadeControlButtonStyle(width: width, height: height))
+    }
+}
+
+private struct ArcadeControlButtonStyle: ButtonStyle {
+    let width: CGFloat
+    let height: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(configuration.isPressed ? Color(red: 1.0, green: 0.9, blue: 0.42) : .white)
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(
+                        RadialGradient(
+                            colors: configuration.isPressed
+                                ? [
+                                    Color(red: 1.0, green: 0.82, blue: 0.3).opacity(0.42),
+                                    Color(red: 1.0, green: 0.82, blue: 0.3).opacity(0.12),
+                                    .clear
+                                ]
+                                : [
+                                    Color.white.opacity(0.08),
+                                    Color.white.opacity(0.02),
+                                    .clear
+                                ],
+                            center: .center,
+                            startRadius: 6,
+                            endRadius: max(width, height) * 0.85
+                        )
+                    )
+                    .scaleEffect(configuration.isPressed ? 1.2 : 1.0)
+                    .blur(radius: configuration.isPressed ? 10 : 2)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: configuration.isPressed
+                                ? [Color(red: 0.4, green: 0.28, blue: 0.12), Color(red: 0.22, green: 0.16, blue: 0.06)]
+                                : [Color(red: 0.26, green: 0.2, blue: 0.36), Color(red: 0.15, green: 0.14, blue: 0.23)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(configuration.isPressed ? Color(red: 1.0, green: 0.82, blue: 0.24) : Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .shadow(
+                color: configuration.isPressed
+                    ? Color(red: 1.0, green: 0.75, blue: 0.2).opacity(0.34)
+                    : .black.opacity(0.22),
+                radius: configuration.isPressed ? 16 : 14,
+                y: configuration.isPressed ? 1 : 6
+            )
+            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+            .frame(width: width, height: height)
     }
 }
 
@@ -478,6 +577,9 @@ private struct SettingsView: View {
     @Binding var showNextPiece: Bool
     @Binding var timeoutEnabled: Bool
     @Binding var timeoutSeconds: Int
+    @Binding var manualLevelEnabled: Bool
+    @Binding var manualLevelValue: Int
+    let onResetRanks: () -> Void
     let onClose: () -> Void
 
     var body: some View {
@@ -568,6 +670,59 @@ private struct SettingsView: View {
             }
             .padding(18)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle(isOn: $manualLevelEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Level")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                        Text(manualLevelEnabled ? "Start at \(manualLevelValue)" : "Auto leveling")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+
+                if manualLevelEnabled {
+                    HStack(spacing: 12) {
+                        Text("1")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.65))
+
+                        Slider(
+                            value: Binding(
+                                get: { Double(manualLevelValue) },
+                                set: { manualLevelValue = Int($0.rounded()) }
+                            ),
+                            in: 1...100,
+                            step: 1
+                        )
+                        .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+
+                        Text("100")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                }
+            }
+            .padding(18)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            Button(action: onResetRanks) {
+                HStack {
+                    Image(systemName: "trash")
+                    Text("Reset Rank")
+                }
+                .font(.system(size: 18, weight: .black, design: .rounded))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .foregroundStyle(.white)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(red: 0.52, green: 0.18, blue: 0.18))
+                )
+            }
+            .buttonStyle(.plain)
         }
         .padding(20)
         .background(
@@ -583,6 +738,73 @@ private struct SettingsView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 24, y: 16)
+    }
+}
+
+private struct ConfirmationView: View {
+    let title: String
+    let message: String
+    let confirmTitle: String
+    let cancelTitle: String
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer()
+                Button(action: onCancel) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text(message)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.78))
+
+            HStack(spacing: 12) {
+                Button(action: onCancel) {
+                    Text(cancelTitle)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .foregroundStyle(.white)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onConfirm) {
+                    Text(confirmTitle)
+                        .font(.system(size: 17, weight: .black, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .foregroundStyle(.white)
+                        .background(Color(red: 0.52, green: 0.18, blue: 0.18), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -629,6 +851,9 @@ private struct RankView: View {
                                 Text(entry.timeoutLabel)
                                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                                     .foregroundStyle(Color(red: 0.56, green: 0.8, blue: 1.0))
+                                Text(entry.levelLabel)
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
                             }
                             Spacer()
                             Text("\(entry.score)")
@@ -725,6 +950,43 @@ private struct HighScoreEntryView: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
+    }
+}
+
+private struct FlashCongratulationsView: View {
+    @State private var flash = false
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("CONGRATULATIONS!")
+                .font(.system(size: 24, weight: .black, design: .rounded))
+            Text("NEW HIGHEST SCORE")
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+        }
+        .foregroundStyle(flash ? Color(red: 1.0, green: 0.92, blue: 0.35) : .white)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(
+            LinearGradient(
+                colors: flash
+                    ? [Color(red: 0.8, green: 0.25, blue: 0.25), Color(red: 0.45, green: 0.12, blue: 0.45)]
+                    : [Color(red: 0.28, green: 0.16, blue: 0.42), Color(red: 0.14, green: 0.08, blue: 0.22)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: Capsule()
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+        )
+        .shadow(color: Color(red: 1.0, green: 0.78, blue: 0.22).opacity(0.35), radius: 18, y: 6)
+        .scaleEffect(flash ? 1.04 : 0.98)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.24).repeatForever(autoreverses: true)) {
+                flash = true
+            }
+        }
     }
 }
 
