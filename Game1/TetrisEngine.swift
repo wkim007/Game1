@@ -156,6 +156,12 @@ struct TetrisEngine {
         return []
     }
 
+    mutating func forceGameOver() -> [GameEvent] {
+        guard !isGameOver else { return [] }
+        isGameOver = true
+        return [.gameOver]
+    }
+
     private mutating func lockActivePiece() -> [GameEvent] {
         for (row, column) in occupiedCells(for: activePiece) {
             guard (0..<Self.rows).contains(row), (0..<Self.columns).contains(column) else {

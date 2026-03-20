@@ -14,6 +14,7 @@
 		A00000000000000000000005 /* SoundEffectPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000015 /* SoundEffectPlayer.swift */; };
 		A00000000000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000016 /* Assets.xcassets */; };
 		A00000000000000000000007 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000017 /* HapticManager.swift */; };
+		A00000000000000000000008 /* HighScoreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* HighScoreStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		A00000000000000000000015 /* SoundEffectPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEffectPlayer.swift; sourceTree = "<group>"; };
 		A00000000000000000000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000017 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000018 /* HighScoreStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighScoreStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +57,7 @@
 				A00000000000000000000014 /* GameViewModel.swift */,
 				A00000000000000000000015 /* SoundEffectPlayer.swift */,
 				A00000000000000000000017 /* HapticManager.swift */,
+				A00000000000000000000018 /* HighScoreStore.swift */,
 				A00000000000000000000016 /* Assets.xcassets */,
 			);
 			path = Game1;
@@ -140,6 +143,7 @@
 				A00000000000000000000002 /* ContentView.swift in Sources */,
 				A00000000000000000000004 /* GameViewModel.swift in Sources */,
 				A00000000000000000000007 /* HapticManager.swift in Sources */,
+				A00000000000000000000008 /* HighScoreStore.swift in Sources */,
 				A00000000000000000000005 /* SoundEffectPlayer.swift in Sources */,
 				A00000000000000000000001 /* TetrisApp.swift in Sources */,
 				A00000000000000000000003 /* TetrisEngine.swift in Sources */,

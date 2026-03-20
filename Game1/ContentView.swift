@@ -5,13 +5,30 @@ struct ContentView: View {
     @AppStorage("sound_enabled") private var soundEnabled = true
     @AppStorage("vibration_enabled") private var vibrationEnabled = true
     @AppStorage("show_next_piece") private var showNextPiece = true
+    @AppStorage("timeout_enabled") private var timeoutEnabled = false
+    @AppStorage("timeout_seconds") private var timeoutSeconds = 60
     @State private var showingSettings = false
+    @State private var showingRanks = false
 
     var body: some View {
         gameView
+            .onChange(of: timeoutEnabled) { _, _ in
+                viewModel.refreshTimeoutSettings()
+            }
+            .onChange(of: timeoutSeconds) { _, _ in
+                viewModel.refreshTimeoutSettings()
+            }
             .overlay {
-                if showingSettings {
-                    settingsOverlay
+                ZStack {
+                    if showingSettings {
+                        settingsOverlay
+                    }
+                    if showingRanks {
+                        rankOverlay
+                    }
+                    if viewModel.showingHighScoreEntry {
+                        highScoreOverlay
+                    }
                 }
             }
     }
@@ -69,28 +86,45 @@ struct ContentView: View {
     }
 
     private var settingsOverlay: some View {
-        ZStack {
-            Color.black.opacity(0.45)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    showingSettings = false
-                }
-
+        popupOverlay {
             SettingsView(
                 soundEnabled: $soundEnabled,
                 vibrationEnabled: $vibrationEnabled,
                 showNextPiece: $showNextPiece,
+                timeoutEnabled: $timeoutEnabled,
+                timeoutSeconds: $timeoutSeconds,
                 onClose: { showingSettings = false }
             )
-            .frame(maxWidth: 340)
-            .padding(24)
+        } backgroundTap: {
+            showingSettings = false
         }
-        .transition(.opacity)
+    }
+
+    private var rankOverlay: some View {
+        popupOverlay {
+            RankView(entries: viewModel.highScores, onClose: { showingRanks = false })
+        } backgroundTap: {
+            showingRanks = false
+        }
+    }
+
+    private var highScoreOverlay: some View {
+        popupOverlay {
+            HighScoreEntryView(
+                name: $viewModel.pendingHighScoreName,
+                score: viewModel.snapshot.score,
+                onSave: { viewModel.saveHighScore() },
+                onClose: { viewModel.dismissHighScoreEntry() }
+            )
+        } backgroundTap: {}
     }
 
     private var leftSidebar: some View {
         VStack(spacing: 10) {
             Spacer()
+            IconControlButton(systemImage: "list.number", width: 46, height: 46) {
+                showingRanks = true
+            }
             IconControlButton(systemImage: viewModel.snapshot.isPaused ? "play.fill" : "pause.fill", width: 46, height: 46) {
                 viewModel.togglePause()
             }
@@ -112,15 +146,25 @@ struct ContentView: View {
 
     private var topPanel: some View {
         HStack(spacing: 8) {
-            MetricCard(label: "Score", value: "\(viewModel.snapshot.score)")
+            MetricCard(label: "Score", value: "\(viewModel.snapshot.score)", isHighlighted: viewModel.timeoutTriggered)
             MetricCard(label: "Lines", value: "\(viewModel.snapshot.lines)")
             MetricCard(label: "Level", value: "\(viewModel.snapshot.level)")
+            if timeoutEnabled {
+                MetricCard(label: "Time", value: timeText)
+            }
         }
+    }
+
+    private var timeText: String {
+        guard let remaining = viewModel.remainingTime else { return "--" }
+        return "\(remaining)s"
     }
 
     private var overlayText: some View {
         Group {
-            if viewModel.snapshot.isGameOver {
+            if viewModel.timeoutTriggered {
+                messageCard(title: "Time Up", subtitle: "Final score locked")
+            } else if viewModel.snapshot.isGameOver {
                 messageCard(title: "Game Over", subtitle: "Tap Restart to play again")
             } else if viewModel.snapshot.isPaused {
                 messageCard(title: "Paused", subtitle: "Resume when ready")
@@ -181,6 +225,22 @@ struct ContentView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 18)
         .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func popupOverlay<Popup: View>(
+        @ViewBuilder content: () -> Popup,
+        backgroundTap: @escaping () -> Void
+    ) -> some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture(perform: backgroundTap)
+
+            content()
+                .frame(maxWidth: 340)
+                .padding(24)
+        }
+        .transition(.opacity)
     }
 }
 
@@ -330,6 +390,7 @@ private struct NextPieceView: View {
 private struct MetricCard: View {
     let label: String
     let value: String
+    var isHighlighted = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -342,10 +403,13 @@ private struct MetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(
+            (isHighlighted ? Color(red: 0.52, green: 0.18, blue: 0.18).opacity(0.9) : Color.white.opacity(0.06)),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                .stroke(isHighlighted ? Color(red: 1.0, green: 0.73, blue: 0.28) : Color.white.opacity(0.05), lineWidth: 1)
         )
     }
 }
@@ -412,6 +476,8 @@ private struct SettingsView: View {
     @Binding var soundEnabled: Bool
     @Binding var vibrationEnabled: Bool
     @Binding var showNextPiece: Bool
+    @Binding var timeoutEnabled: Bool
+    @Binding var timeoutSeconds: Int
     let onClose: () -> Void
 
     var body: some View {
@@ -465,6 +531,43 @@ private struct SettingsView: View {
             .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
             .padding(18)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle(isOn: $timeoutEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Timeout")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                        Text(timeoutEnabled ? "\(timeoutSeconds) sec" : "Unlimited")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+
+                if timeoutEnabled {
+                    HStack(spacing: 12) {
+                        Text("10")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.65))
+
+                        Slider(
+                            value: Binding(
+                                get: { Double(timeoutSeconds) },
+                                set: { timeoutSeconds = Int($0.rounded()) }
+                            ),
+                            in: 10...300,
+                            step: 10
+                        )
+                        .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+
+                        Text("300")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                }
+            }
+            .padding(18)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .padding(20)
         .background(
@@ -480,6 +583,148 @@ private struct SettingsView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 24, y: 16)
+    }
+}
+
+private struct RankView: View {
+    let entries: [HighScoreEntry]
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Top 10")
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+
+            if entries.isEmpty {
+                Text("No scores saved yet.")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.72))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        HStack(alignment: .top) {
+                            Text("\(index + 1).")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.68))
+                                .frame(width: 26, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.name)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                Text(Self.dateFormatter.string(from: entry.date))
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(.white.opacity(0.62))
+                                Text(entry.timeoutLabel)
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color(red: 0.56, green: 0.8, blue: 1.0))
+                            }
+                            Spacer()
+                            Text("\(entry.score)")
+                                .font(.system(size: 18, weight: .black, design: .rounded))
+                                .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+}
+
+private struct HighScoreEntryView: View {
+    @Binding var name: String
+    let score: Int
+    let onSave: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("New High Score")
+                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text("Score: \(score)")
+                .font(.system(size: 20, weight: .black, design: .rounded))
+                .foregroundStyle(Color(red: 1.0, green: 0.83, blue: 0.3))
+
+            TextField("Enter name", text: $name)
+                .textInputAutocapitalization(.words)
+                .disableAutocorrection(true)
+                .padding(14)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .foregroundStyle(.white)
+
+            Button(action: onSave) {
+                Text("Save Score")
+                    .font(.system(size: 17, weight: .black, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(.white)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(red: 0.29, green: 0.56, blue: 0.8))
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .opacity(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.45 : 1)
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
