@@ -213,7 +213,9 @@ struct ContentView: View {
 
     private var overlayText: some View {
         Group {
-            if viewModel.timeoutTriggered {
+            if !viewModel.hasStarted {
+                startGameCard
+            } else if viewModel.timeoutTriggered {
                 messageCard(title: "Time Up", subtitle: "Final score locked")
             } else if viewModel.snapshot.isGameOver {
                 messageCard(title: "Game Over", subtitle: "Tap Restart to play again")
@@ -221,6 +223,41 @@ struct ContentView: View {
                 messageCard(title: "Paused", subtitle: "Resume when ready")
             }
         }
+    }
+
+    private var startGameCard: some View {
+        VStack(spacing: 14) {
+            Text("Ready")
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+
+            Button(action: { viewModel.startGame() }) {
+                Text("Start Game")
+                    .font(.system(size: 18, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(red: 0.34, green: 0.62, blue: 0.92), Color(red: 0.2, green: 0.38, blue: 0.65)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+                    .shadow(color: Color(red: 0.34, green: 0.62, blue: 0.92).opacity(0.28), radius: 12, y: 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 20)
+        .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var lineClearOverlay: some View {

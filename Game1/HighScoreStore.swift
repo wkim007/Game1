@@ -76,6 +76,15 @@ final class HighScoreStore {
         load().first?.score ?? 0
     }
 
+    func qualifiesForTopTen(score: Int) -> Bool {
+        let entries = load()
+        if entries.count < 10 {
+            return score > 0
+        }
+        guard let last = entries.last else { return score > 0 }
+        return score > last.score
+    }
+
     func save(name: String, score: Int, timeoutLabel: String, levelLabel: String, date: Date = .now) {
         let sanitizedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !sanitizedName.isEmpty else { return }

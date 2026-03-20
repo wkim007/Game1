@@ -20,6 +20,7 @@ final class GameViewModel: ObservableObject {
     @Published private(set) var remainingTime: Int?
     @Published private(set) var timeoutTriggered = false
     @Published private(set) var highScores: [HighScoreEntry] = HighScoreStore.shared.load()
+    @Published private(set) var hasStarted = false
     @Published var pendingHighScoreName = ""
     @Published private(set) var showingHighScoreEntry = false
     @Published private(set) var showingHighScoreCelebration = false
@@ -33,9 +34,8 @@ final class GameViewModel: ObservableObject {
     init() {
         engine.setManualLevel(Self.initialManualLevelFromDefaults())
         snapshot = engine.snapshot
-        runStartedAt = .now
-        restartTimer()
-        restartTimeoutTimer()
+        runStartedAt = nil
+        remainingTime = nil
     }
 
     deinit {
@@ -44,26 +44,43 @@ final class GameViewModel: ObservableObject {
     }
 
     func moveLeft() {
+        guard hasStarted else { return }
         apply(engine.moveHorizontal(-1))
     }
 
     func moveRight() {
+        guard hasStarted else { return }
         apply(engine.moveHorizontal(1))
     }
 
     func rotate() {
+        guard hasStarted else { return }
         apply(engine.rotateClockwise())
     }
 
     func softDrop() {
+        guard hasStarted else { return }
         apply(engine.softDrop())
     }
 
     func hardDrop() {
+        guard hasStarted else { return }
         apply(engine.hardDrop())
     }
 
+    func startGame() {
+        guard !hasStarted else { return }
+        hasStarted = true
+        timeoutTriggered = false
+        elapsedBeforePause = 0
+        runStartedAt = .now
+        refresh()
+        restartTimer()
+        restartTimeoutTimer()
+    }
+
     func togglePause() {
+        guard hasStarted else { return }
         let wasPaused = snapshot.isPaused
         engine.togglePause()
         if wasPaused {
@@ -78,6 +95,7 @@ final class GameViewModel: ObservableObject {
 
     func restart() {
         engine.startNewGame()
+        hasStarted = true
         elapsedBeforePause = 0
         runStartedAt = .now
         timeoutTriggered = false
@@ -110,6 +128,13 @@ final class GameViewModel: ObservableObject {
     }
 
     func refreshTimeoutSettings() {
+        guard hasStarted else {
+            timeoutTriggered = false
+            remainingTime = nil
+            timeoutTimer?.invalidate()
+            return
+        }
+
         if !timeoutEnabled {
             timeoutTriggered = false
             remainingTime = nil
@@ -155,6 +180,7 @@ final class GameViewModel: ObservableObject {
 
         if snapshot.isGameOver {
             timeoutTimer?.invalidate()
+            evaluateHighScoreQualification()
         }
     }
 
@@ -168,7 +194,7 @@ final class GameViewModel: ObservableObject {
 
     private func restartTimer() {
         timer?.invalidate()
-        guard !snapshot.isPaused, !snapshot.isGameOver else { return }
+        guard hasStarted, !snapshot.isPaused, !snapshot.isGameOver else { return }
 
         timer = Timer.scheduledTimer(withTimeInterval: engine.dropInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -179,8 +205,8 @@ final class GameViewModel: ObservableObject {
 
     private func restartTimeoutTimer() {
         timeoutTimer?.invalidate()
-        guard timeoutEnabled, !snapshot.isPaused, !snapshot.isGameOver else {
-            remainingTime = timeoutEnabled ? remainingTimeForCurrentState() : nil
+        guard hasStarted, timeoutEnabled, !snapshot.isPaused, !snapshot.isGameOver else {
+            remainingTime = hasStarted && timeoutEnabled ? remainingTimeForCurrentState() : nil
             return
         }
 
@@ -265,9 +291,15 @@ final class GameViewModel: ObservableObject {
         snapshot = updatedSnapshot
         timeoutTimer?.invalidate()
         remainingTime = 0
+        evaluateHighScoreQualification()
+    }
 
+    private func evaluateHighScoreQualification() {
+        guard snapshot.isGameOver, !showingHighScoreEntry else { return }
+        guard HighScoreStore.shared.qualifiesForTopTen(score: snapshot.score) else { return }
+
+        showingHighScoreEntry = true
         if snapshot.score > HighScoreStore.shared.highestScore() {
-            showingHighScoreEntry = true
             triggerHighScoreCelebration()
         }
     }
