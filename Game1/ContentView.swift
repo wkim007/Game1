@@ -4,20 +4,15 @@ struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
     @AppStorage("sound_enabled") private var soundEnabled = true
     @AppStorage("show_next_piece") private var showNextPiece = true
+    @State private var showingSettings = false
 
     var body: some View {
-        TabView {
-            gameView
-                .tabItem {
-                    Label("Game", systemImage: "gamecontroller.fill")
+        gameView
+            .overlay {
+                if showingSettings {
+                    settingsOverlay
                 }
-
-            SettingsView(soundEnabled: $soundEnabled, showNextPiece: $showNextPiece)
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
-        }
-        .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+            }
     }
 
     private var gameView: some View {
@@ -30,7 +25,23 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 10) {
-                topPanel
+                HStack(alignment: .top, spacing: 8) {
+                    topPanel
+
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20, weight: .bold))
+                            .frame(width: 46, height: 46)
+                            .foregroundStyle(.white)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(Color(red: 0.16, green: 0.27, blue: 0.35))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 HStack(alignment: .top, spacing: 8) {
                     leftSidebar
@@ -51,6 +62,25 @@ struct ContentView: View {
             .padding(.top, 6)
             .padding(.bottom, 6)
         }
+    }
+
+    private var settingsOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    showingSettings = false
+                }
+
+            SettingsView(
+                soundEnabled: $soundEnabled,
+                showNextPiece: $showNextPiece,
+                onClose: { showingSettings = false }
+            )
+            .frame(maxWidth: 340)
+            .padding(24)
+        }
+        .transition(.opacity)
     }
 
     private var leftSidebar: some View {
@@ -260,47 +290,63 @@ private struct IconControlButton: View {
 private struct SettingsView: View {
     @Binding var soundEnabled: Bool
     @Binding var showNextPiece: Bool
+    let onClose: () -> Void
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-
-            VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top) {
                 Text("Settings")
                     .font(.system(size: 32, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
 
-                Toggle(isOn: $soundEnabled) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Sound Effects")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(.white)
-                }
-                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
-                .padding(18)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                Toggle(isOn: $showNextPiece) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Show Next")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(.white)
-                }
-                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
-                .padding(18)
-                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-
                 Spacer()
+
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
-            .padding(20)
+
+            Toggle(isOn: $soundEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Sound Effects")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                }
+                .foregroundStyle(.white)
+            }
+            .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+            .padding(18)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            Toggle(isOn: $showNextPiece) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Show Next")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                }
+                .foregroundStyle(.white)
+            }
+            .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+            .padding(18)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 24, y: 16)
     }
 }
 
