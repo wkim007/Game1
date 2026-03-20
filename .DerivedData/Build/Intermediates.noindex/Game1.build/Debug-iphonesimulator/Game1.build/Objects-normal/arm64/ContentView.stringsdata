@@ -1,0 +1,32 @@
+{
+  "source": "/Users/MacBook/Desktop/AI_Project/Game1/Game1/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "TETRIS",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Classic falling blocks with built-in synth effects",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "Next",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 165
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,59 @@
+{
+  "" : {
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/Game1-primary.dia",
+    "emit-module-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/Game1-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/Game1-primary-emit-module.dia",
+    "pch" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/Game1-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/Game1-primary.swiftdeps"
+  },
+  "/Users/MacBook/Desktop/AI_Project/Game1/Game1/ContentView.swift" : {
+    "const-values" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.d",
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.dia",
+    "index-unit-output-path" : "/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.o",
+    "llvm-bc" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.bc",
+    "object" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.o",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/ContentView~partial.swiftmodule"
+  },
+  "/Users/MacBook/Desktop/AI_Project/Game1/Game1/GameViewModel.swift" : {
+    "const-values" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.swiftconstvalues",
+    "dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.d",
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.dia",
+    "index-unit-output-path" : "/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.o",
+    "llvm-bc" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.bc",
+    "object" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.o",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel.swiftdeps",
+    "swiftmodule" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/GameViewModel~partial.swiftmodule"
+  },
+  "/Users/MacBook/Desktop/AI_Project/Game1/Game1/SoundEffectPlayer.swift" : {
+    "const-values" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.swiftconstvalues",
+    "dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.d",
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.dia",
+    "index-unit-output-path" : "/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.o",
+    "llvm-bc" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.bc",
+    "object" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.o",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer.swiftdeps",
+    "swiftmodule" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/SoundEffectPlayer~partial.swiftmodule"
+  },
+  "/Users/MacBook/Desktop/AI_Project/Game1/Game1/TetrisApp.swift" : {
+    "const-values" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.swiftconstvalues",
+    "dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.d",
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.dia",
+    "index-unit-output-path" : "/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.o",
+    "llvm-bc" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.bc",
+    "object" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.o",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp.swiftdeps",
+    "swiftmodule" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisApp~partial.swiftmodule"
+  },
+  "/Users/MacBook/Desktop/AI_Project/Game1/Game1/TetrisEngine.swift" : {
+    "const-values" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.swiftconstvalues",
+    "dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.d",
+    "diagnostics" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.dia",
+    "index-unit-output-path" : "/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.o",
+    "llvm-bc" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.bc",
+    "object" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.o",
+    "swift-dependencies" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine.swiftdeps",
+    "swiftmodule" : "/Users/MacBook/Desktop/AI_Project/Game1/.DerivedData/Build/Intermediates.noindex/Game1.build/Debug-iphonesimulator/Game1.build/Objects-normal/x86_64/TetrisEngine~partial.swiftmodule"
+  }
+}
