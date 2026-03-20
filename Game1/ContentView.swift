@@ -685,9 +685,16 @@ private struct SettingsView: View {
 
                 if timeoutEnabled {
                     HStack(spacing: 12) {
-                        Text("10")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.65))
+                        Button(action: {
+                            timeoutSeconds = max(10, timeoutSeconds - 1)
+                        }) {
+                            Image(systemName: "minus")
+                                .font(.system(size: 14, weight: .black))
+                                .frame(width: 34, height: 34)
+                                .foregroundStyle(.white)
+                                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
 
                         Slider(
                             value: Binding(
@@ -699,9 +706,16 @@ private struct SettingsView: View {
                         )
                         .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
 
-                        Text("300")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.65))
+                        Button(action: {
+                            timeoutSeconds = min(300, timeoutSeconds + 1)
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .black))
+                                .frame(width: 34, height: 34)
+                                .foregroundStyle(.white)
+                                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -722,9 +736,16 @@ private struct SettingsView: View {
 
                 if manualLevelEnabled {
                     HStack(spacing: 12) {
-                        Text("1")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.65))
+                        Button(action: {
+                            manualLevelValue = max(1, manualLevelValue - 1)
+                        }) {
+                            Image(systemName: "minus")
+                                .font(.system(size: 14, weight: .black))
+                                .frame(width: 34, height: 34)
+                                .foregroundStyle(.white)
+                                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
 
                         Slider(
                             value: Binding(
@@ -736,9 +757,16 @@ private struct SettingsView: View {
                         )
                         .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
 
-                        Text("100")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.65))
+                        Button(action: {
+                            manualLevelValue = min(100, manualLevelValue + 1)
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .black))
+                                .frame(width: 34, height: 34)
+                                .foregroundStyle(.white)
+                                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
