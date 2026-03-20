@@ -94,23 +94,30 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 8) {
-            IconControlButton(systemImage: "arrow.left", width: 56, height: 46) {
-                viewModel.moveLeft()
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                IconControlButton(systemImage: "arrow.left", width: 56, height: 46) {
+                    viewModel.moveLeft()
+                }
+                IconControlButton(systemImage: "rotate.right", width: 56, height: 46) {
+                    viewModel.rotate()
+                }
+                IconControlButton(systemImage: "arrow.right", width: 56, height: 46) {
+                    viewModel.moveRight()
+                }
             }
-            IconControlButton(systemImage: "rotate.right", width: 56, height: 46) {
-                viewModel.rotate()
-            }
-            IconControlButton(systemImage: "arrow.right", width: 56, height: 46) {
-                viewModel.moveRight()
-            }
-            IconControlButton(systemImage: "arrow.down", width: 56, height: 46) {
-                viewModel.softDrop()
-            }
-            IconControlButton(systemImage: "arrow.down.to.line", width: 56, height: 46) {
-                viewModel.hardDrop()
+
+            HStack(spacing: 8) {
+                Spacer()
+                    .frame(width: 64)
+                IconControlButton(systemImage: "arrow.down.to.line", width: 56, height: 46) {
+                    viewModel.hardDrop()
+                }
+                Spacer()
+                    .frame(width: 64)
             }
         }
+        .padding(.top, 18)
     }
 
     private func messageCard(title: String, subtitle: String) -> some View {
