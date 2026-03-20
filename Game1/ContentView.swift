@@ -2,46 +2,86 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = GameViewModel()
+    @AppStorage("sound_enabled") private var soundEnabled = true
+    @AppStorage("show_next_piece") private var showNextPiece = true
 
     var body: some View {
+        TabView {
+            gameView
+                .tabItem {
+                    Label("Game", systemImage: "gamecontroller.fill")
+                }
+
+            SettingsView(soundEnabled: $soundEnabled, showNextPiece: $showNextPiece)
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+        }
+        .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+    }
+
+    private var gameView: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.95, green: 0.88, blue: 0.72), Color(red: 0.73, green: 0.82, blue: 0.86)],
+                colors: [Color(red: 0.13, green: 0.15, blue: 0.18), Color(red: 0.08, green: 0.22, blue: 0.33)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                title
-                scorePanel
+            VStack(spacing: 10) {
+                topPanel
 
-                BoardView(board: viewModel.snapshot.board)
-                    .overlay(alignment: .center) {
-                        overlayText
-                    }
+                HStack(spacing: 8) {
+                    leftSidebar
 
-                NextPieceView(kind: viewModel.snapshot.nextPiece)
+                    BoardView(board: viewModel.snapshot.board)
+                        .overlay(alignment: .center) {
+                            overlayText
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    rightSidebar
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 controls
             }
-            .padding(20)
+            .padding(.horizontal, 10)
+            .padding(.top, 6)
+            .padding(.bottom, 6)
         }
     }
 
-    private var title: some View {
-        VStack(spacing: 4) {
-            Text("TETRIS")
-                .font(.system(size: 38, weight: .black, design: .rounded))
-                .foregroundStyle(Color(red: 0.13, green: 0.16, blue: 0.22))
-            Text("Classic falling blocks with built-in synth effects")
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundStyle(.black.opacity(0.65))
+    private var leftSidebar: some View {
+        VStack(spacing: 10) {
+            Spacer()
+            IconControlButton(systemImage: viewModel.snapshot.isPaused ? "play.fill" : "pause.fill", width: 46, height: 46) {
+                viewModel.togglePause()
+            }
+            IconControlButton(systemImage: "gobackward", width: 46, height: 46) {
+                viewModel.restart()
+            }
+            Spacer()
         }
+        .frame(width: 52)
     }
 
-    private var scorePanel: some View {
-        HStack(spacing: 12) {
+    private var rightSidebar: some View {
+        VStack(spacing: 8) {
+            if showNextPiece {
+                NextPieceView(kind: viewModel.snapshot.nextPiece)
+            } else {
+                Spacer()
+                    .frame(width: 56, height: 72)
+            }
+            Spacer()
+        }
+        .frame(width: showNextPiece ? 64 : 16)
+    }
+
+    private var topPanel: some View {
+        HStack(spacing: 8) {
             MetricCard(label: "Score", value: "\(viewModel.snapshot.score)")
             MetricCard(label: "Lines", value: "\(viewModel.snapshot.lines)")
             MetricCard(label: "Level", value: "\(viewModel.snapshot.level)")
@@ -59,38 +99,21 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                ControlButton(title: "Left", systemImage: "arrow.left") {
-                    viewModel.moveLeft()
-                }
-                ControlButton(title: "Rotate", systemImage: "rotate.right") {
-                    viewModel.rotate()
-                }
-                ControlButton(title: "Right", systemImage: "arrow.right") {
-                    viewModel.moveRight()
-                }
+        HStack(spacing: 8) {
+            IconControlButton(systemImage: "arrow.left", width: 56, height: 46) {
+                viewModel.moveLeft()
             }
-
-            HStack(spacing: 12) {
-                ControlButton(title: "Down", systemImage: "arrow.down") {
-                    viewModel.softDrop()
-                }
-                ControlButton(title: "Drop", systemImage: "arrow.down.to.line") {
-                    viewModel.hardDrop()
-                }
+            IconControlButton(systemImage: "rotate.right", width: 56, height: 46) {
+                viewModel.rotate()
             }
-
-            HStack(spacing: 12) {
-                ControlButton(
-                    title: viewModel.snapshot.isPaused ? "Resume" : "Pause",
-                    systemImage: viewModel.snapshot.isPaused ? "play.fill" : "pause.fill"
-                ) {
-                    viewModel.togglePause()
-                }
-                ControlButton(title: "Restart", systemImage: "gobackward") {
-                    viewModel.restart()
-                }
+            IconControlButton(systemImage: "arrow.right", width: 56, height: 46) {
+                viewModel.moveRight()
+            }
+            IconControlButton(systemImage: "arrow.down", width: 56, height: 46) {
+                viewModel.softDrop()
+            }
+            IconControlButton(systemImage: "arrow.down.to.line", width: 56, height: 46) {
+                viewModel.hardDrop()
             }
         }
     }
@@ -119,26 +142,30 @@ private struct BoardView: View {
             let boardWidth = cellSize * CGFloat(TetrisEngine.columns)
             let boardHeight = cellSize * CGFloat(TetrisEngine.rows)
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color(red: 0.11, green: 0.14, blue: 0.18))
-                    .shadow(color: .black.opacity(0.2), radius: 20, y: 14)
+            VStack(spacing: 0) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color(red: 0.11, green: 0.14, blue: 0.18))
+                        .shadow(color: .black.opacity(0.28), radius: 20, y: 14)
 
-                VStack(spacing: 2) {
-                    ForEach(board.indices, id: \.self) { row in
-                        HStack(spacing: 2) {
-                            ForEach(board[row].indices, id: \.self) { column in
-                                CellView(kind: board[row][column])
-                                    .frame(width: cellSize - 2, height: cellSize - 2)
+                    VStack(spacing: 2) {
+                        ForEach(board.indices, id: \.self) { row in
+                            HStack(spacing: 2) {
+                                ForEach(board[row].indices, id: \.self) { column in
+                                    CellView(kind: board[row][column])
+                                        .frame(width: cellSize - 2, height: cellSize - 2)
+                                }
                             }
                         }
                     }
+                    .frame(width: boardWidth, height: boardHeight)
+                    .padding(10)
                 }
-                .frame(width: boardWidth, height: boardHeight)
-                .padding(10)
+                .frame(width: boardWidth + 20, height: boardHeight + 20)
+
+                Spacer(minLength: 0)
             }
-            .frame(width: boardWidth + 20, height: boardHeight + 20)
-            .position(x: size.width / 2, y: size.height / 2)
+            .frame(width: size.width, height: size.height, alignment: .top)
         }
         .aspectRatio(0.56, contentMode: .fit)
     }
@@ -161,26 +188,27 @@ private struct NextPieceView: View {
     let kind: BlockKind
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 5) {
             Text("Next")
-                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                .foregroundStyle(.black.opacity(0.75))
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.78))
 
-            VStack(spacing: 4) {
+            VStack(spacing: 2) {
                 let cells = kind.previewGrid
                 ForEach(cells.indices, id: \.self) { row in
-                    HStack(spacing: 4) {
+                    HStack(spacing: 2) {
                         ForEach(cells[row].indices, id: \.self) { column in
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(cells[row][column] ? kind.fillColor : Color.white.opacity(0.2))
-                                .frame(width: 20, height: 20)
+                                .frame(width: 10, height: 10)
                         }
                     }
                 }
             }
-            .padding(12)
-            .background(.white.opacity(0.45), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(7)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+        .frame(width: 56)
     }
 }
 
@@ -191,29 +219,29 @@ private struct MetricCard: View {
     var body: some View {
         VStack(spacing: 6) {
             Text(label.uppercased())
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .foregroundStyle(.black.opacity(0.55))
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.62))
             Text(value)
-                .font(.system(size: 24, weight: .heavy, design: .rounded))
-                .foregroundStyle(Color(red: 0.12, green: 0.16, blue: 0.2))
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
-private struct ControlButton: View {
-    let title: String
+private struct IconControlButton: View {
     let systemImage: String
+    var width: CGFloat = 64
+    var height: CGFloat = 52
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .bold))
+                .frame(width: width, height: height)
                 .foregroundStyle(.white)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -221,6 +249,53 @@ private struct ControlButton: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct SettingsView: View {
+    @Binding var soundEnabled: Bool
+    @Binding var showNextPiece: Bool
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(red: 0.11, green: 0.13, blue: 0.16), Color(red: 0.08, green: 0.18, blue: 0.26)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Settings")
+                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Toggle(isOn: $soundEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sound Effects")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                    }
+                    .foregroundStyle(.white)
+                }
+                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+                .padding(18)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                Toggle(isOn: $showNextPiece) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Show Next")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                    }
+                    .foregroundStyle(.white)
+                }
+                .tint(Color(red: 0.29, green: 0.56, blue: 0.8))
+                .padding(18)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                Spacer()
+            }
+            .padding(20)
+        }
     }
 }
 

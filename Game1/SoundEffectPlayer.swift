@@ -3,6 +3,7 @@ import Foundation
 
 final class SoundEffectPlayer {
     static let shared = SoundEffectPlayer()
+    private static let soundEnabledKey = "sound_enabled"
 
     enum Effect {
         case move
@@ -15,6 +16,18 @@ final class SoundEffectPlayer {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+
+    var isEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Self.soundEnabledKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Self.soundEnabledKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.soundEnabledKey)
+        }
+    }
 
     private init() {
         engine.attach(player)
@@ -39,6 +52,8 @@ final class SoundEffectPlayer {
     }
 
     func play(_ effect: Effect) {
+        guard isEnabled else { return }
+
         let sequence: [(Double, Double, Double)]
         switch effect {
         case .move:
