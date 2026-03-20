@@ -32,7 +32,7 @@ struct ContentView: View {
             VStack(spacing: 10) {
                 topPanel
 
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     leftSidebar
 
                     BoardView(board: viewModel.snapshot.board)
@@ -62,22 +62,17 @@ struct ContentView: View {
             IconControlButton(systemImage: "gobackward", width: 46, height: 46) {
                 viewModel.restart()
             }
+            if showNextPiece {
+                NextPieceView(kind: viewModel.snapshot.nextPiece)
+            }
             Spacer()
         }
         .frame(width: 52)
     }
 
     private var rightSidebar: some View {
-        VStack(spacing: 8) {
-            if showNextPiece {
-                NextPieceView(kind: viewModel.snapshot.nextPiece)
-            } else {
-                Spacer()
-                    .frame(width: 56, height: 72)
-            }
-            Spacer()
-        }
-        .frame(width: showNextPiece ? 64 : 16)
+        Spacer()
+            .frame(width: 8)
     }
 
     private var topPanel: some View {
@@ -198,17 +193,20 @@ private struct NextPieceView: View {
                 ForEach(cells.indices, id: \.self) { row in
                     HStack(spacing: 2) {
                         ForEach(cells[row].indices, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(cells[row][column] ? kind.fillColor : Color.white.opacity(0.2))
-                                .frame(width: 10, height: 10)
+                            if cells[row][column] {
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(kind.fillColor)
+                                    .frame(width: 8, height: 8)
+                            } else {
+                                Color.clear
+                                    .frame(width: 8, height: 8)
+                            }
                         }
                     }
                 }
             }
-            .padding(7)
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .frame(width: 56)
+        .frame(width: 44)
     }
 }
 
