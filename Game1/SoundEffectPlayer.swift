@@ -16,6 +16,7 @@ final class SoundEffectPlayer {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
+    private let notificationCenter = NotificationCenter.default
 
     var isEnabled: Bool {
         get {
@@ -34,25 +35,16 @@ final class SoundEffectPlayer {
         engine.connect(player, to: engine.mainMixerNode, format: format)
 
         #if os(iOS)
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-            try session.setActive(true)
-        } catch {
-            assertionFailure("Audio session setup failed: \(error)")
-        }
+        configureAudioSession()
+        observeAudioSessionChanges()
         #endif
 
-        do {
-            try engine.start()
-            player.play()
-        } catch {
-            assertionFailure("Audio engine failed to start: \(error)")
-        }
+        startEngineIfNeeded()
     }
 
     func play(_ effect: Effect) {
         guard isEnabled else { return }
+        startEngineIfNeeded()
 
         let sequence: [(Double, Double, Double)]
         switch effect {
@@ -71,6 +63,75 @@ final class SoundEffectPlayer {
         player.scheduleBuffer(makeBuffer(sequence), at: nil, options: .interrupts)
         if !player.isPlaying {
             player.play()
+        }
+    }
+
+    #if os(iOS)
+    private func configureAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            print("Audio session setup failed: \(error)")
+        }
+    }
+
+    private func observeAudioSessionChanges() {
+        notificationCenter.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] _ in
+            self?.recoverAudioOutput()
+        }
+
+        notificationCenter.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleInterruption(notification)
+        }
+    }
+
+    private func handleInterruption(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let rawValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: rawValue)
+        else {
+            return
+        }
+
+        switch type {
+        case .began:
+            player.pause()
+        case .ended:
+            recoverAudioOutput()
+        @unknown default:
+            recoverAudioOutput()
+        }
+    }
+
+    private func recoverAudioOutput() {
+        configureAudioSession()
+        engine.stop()
+        player.stop()
+        startEngineIfNeeded()
+    }
+    #endif
+
+    private func startEngineIfNeeded() {
+        do {
+            if !engine.isRunning {
+                try engine.start()
+            }
+            if !player.isPlaying {
+                player.play()
+            }
+        } catch {
+            print("Audio engine failed to start: \(error)")
         }
     }
 

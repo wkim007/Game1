@@ -15,7 +15,8 @@ final class GameViewModel: ObservableObject {
         static let manualLevelValue = "manual_level_value"
     }
 
-    @Published private(set) var snapshot: GameSnapshot    @Published private(set) var lineClearEffect: LineClearEffect?
+    @Published private(set) var snapshot: GameSnapshot
+    @Published private(set) var lineClearEffect: LineClearEffect?
     @Published private(set) var remainingTime: Int?
     @Published private(set) var timeoutTriggered = false
     @Published private(set) var highScores: [HighScoreEntry] = HighScoreStore.shared.load()
