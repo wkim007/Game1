@@ -32,6 +32,8 @@ final class GameViewModel: ObservableObject {
     private var timeoutTimer: Timer?
     private var elapsedBeforePause: TimeInterval = 0
     private var runStartedAt: Date?
+    private var lastSpecialAppearanceAt: Date?
+    private var observedSpecialAppearanceCount = 0
 
     init() {
         engine.setManualLevel(Self.initialManualLevelFromDefaults())
@@ -77,6 +79,8 @@ final class GameViewModel: ObservableObject {
         elapsedBeforePause = 0
         runStartedAt = .now
         refresh()
+        lastSpecialAppearanceAt = .now
+        observedSpecialAppearanceCount = snapshot.specialAppearanceCount
         restartTimer()
         restartTimeoutTimer()
     }
@@ -106,6 +110,8 @@ final class GameViewModel: ObservableObject {
         pendingHighScoreName = ""
         applyGameplaySettings()
         refresh()
+        lastSpecialAppearanceAt = .now
+        observedSpecialAppearanceCount = snapshot.specialAppearanceCount
         restartTimer()
         restartTimeoutTimer()
     }
@@ -166,6 +172,7 @@ final class GameViewModel: ObservableObject {
     }
 
     private func tick() {
+        enforceSpecialGuaranteeIfNeeded()
         apply(engine.tick(), reschedule: true)
     }
 
@@ -175,6 +182,7 @@ final class GameViewModel: ObservableObject {
         let updatedSnapshot = engine.snapshot
         handle(events, scoreDelta: updatedSnapshot.score - previousScore)
         snapshot = updatedSnapshot
+        observeSpecialAppearance()
 
         if reschedule || snapshot.level != previousLevel {
             restartTimer()
@@ -188,10 +196,25 @@ final class GameViewModel: ObservableObject {
 
     private func refresh() {
         snapshot = engine.snapshot
+        observeSpecialAppearance()
     }
 
     private func applyGameplaySettings() {
         engine.setManualLevel(manualLevelEnabled ? manualLevelValue : nil)
+    }
+
+    private func observeSpecialAppearance() {
+        guard snapshot.specialAppearanceCount != observedSpecialAppearanceCount else { return }
+        observedSpecialAppearanceCount = snapshot.specialAppearanceCount
+        lastSpecialAppearanceAt = .now
+    }
+
+    private func enforceSpecialGuaranteeIfNeeded() {
+        guard hasStarted, !snapshot.isPaused, !snapshot.isGameOver else { return }
+        let lastAppearance = lastSpecialAppearanceAt ?? .now
+        guard Date().timeIntervalSince(lastAppearance) >= 60 else { return }
+        guard engine.promoteActivePieceToSpecialIfNeeded() else { return }
+        refresh()
     }
 
     private func restartTimer() {

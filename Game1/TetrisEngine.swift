@@ -62,6 +62,7 @@ struct GameSnapshot {
     let silverCount: Int
     let goldCount: Int
     let diamondCount: Int
+    let specialAppearanceCount: Int
     let lines: Int
     let level: Int
     let isPaused: Bool
@@ -80,6 +81,7 @@ struct TetrisEngine {
     private(set) var silverCount = 0
     private(set) var goldCount = 0
     private(set) var diamondCount = 0
+    private(set) var specialAppearanceCount = 0
     private(set) var isPaused = false
     private(set) var isGameOver = false
     private var manualLevelOverride: Int?
@@ -112,6 +114,7 @@ struct TetrisEngine {
             silverCount: silverCount,
             goldCount: goldCount,
             diamondCount: diamondCount,
+            specialAppearanceCount: specialAppearanceCount,
             lines: clearedLines,
             level: level,
             isPaused: isPaused,
@@ -129,6 +132,7 @@ struct TetrisEngine {
         silverCount = 0
         goldCount = 0
         diamondCount = 0
+        specialAppearanceCount = 0
         isPaused = false
         isGameOver = false
         bag.removeAll()
@@ -206,6 +210,14 @@ struct TetrisEngine {
 
     mutating func setManualLevel(_ level: Int?) {
         manualLevelOverride = level.map { min(max($0, 1), 100) }
+    }
+
+    mutating func promoteActivePieceToSpecialIfNeeded() -> Bool {
+        guard activePiece.specialKind == nil else { return false }
+        var promotedPiece = activePiece
+        assignRandomSpecial(to: &promotedPiece, force: true)
+        activePiece = promotedPiece
+        return activePiece.specialKind != nil
     }
 
     private mutating func lockActivePiece() -> [GameEvent] {
@@ -289,14 +301,16 @@ struct TetrisEngine {
     private mutating func spawnNextPiece() {
         let spawnedKind = nextPiece
         nextPiece = dequeueKind()
-        activePiece = Piece(
+        var nextActivePiece = Piece(
             kind: spawnedKind,
             rotation: 0,
             row: 0,
             column: 3,
-            specialKind: randomSpecialKind(),
-            specialCellIndex: Int.random(in: 0..<4)
+            specialKind: nil,
+            specialCellIndex: nil
         )
+        assignRandomSpecial(to: &nextActivePiece, force: false)
+        activePiece = nextActivePiece
     }
 
     private mutating func dequeueKind() -> BlockKind {
@@ -350,6 +364,15 @@ struct TetrisEngine {
     private func randomSpecialKind() -> SpecialBlockKind? {
         guard Int.random(in: 0..<100) < 12 else { return nil }
         return SpecialBlockKind.allCases.randomElement()
+    }
+
+    private mutating func assignRandomSpecial(to piece: inout Piece, force: Bool) {
+        let specialKind = force ? SpecialBlockKind.allCases.randomElement() : randomSpecialKind()
+        piece.specialKind = specialKind
+        piece.specialCellIndex = specialKind == nil ? nil : Int.random(in: 0..<4)
+        if specialKind != nil {
+            specialAppearanceCount += 1
+        }
     }
 }
 

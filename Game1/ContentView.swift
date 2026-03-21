@@ -284,25 +284,25 @@ struct ContentView: View {
     private var controls: some View {
         VStack(spacing: 14) {
             HStack(spacing: 14) {
-                IconControlButton(systemImage: "arrow.left", width: 70, height: 58) {
+                IconControlButton(systemImage: "arrow.left", width: 74, height: 74, style: .metallic) {
                     viewModel.moveLeft()
                 }
-                IconControlButton(systemImage: "rotate.right", width: 70, height: 58) {
+                IconControlButton(systemImage: "rotate.right", width: 74, height: 74, style: .metallic) {
                     viewModel.rotate()
                 }
-                IconControlButton(systemImage: "arrow.right", width: 70, height: 58) {
+                IconControlButton(systemImage: "arrow.right", width: 74, height: 74, style: .metallic) {
                     viewModel.moveRight()
                 }
             }
 
             HStack(spacing: 14) {
                 Spacer()
-                    .frame(width: 84)
-                IconControlButton(systemImage: "arrow.down.to.line", width: 70, height: 58) {
+                    .frame(width: 88)
+                IconControlButton(systemImage: "arrow.down.to.line", width: 74, height: 74, style: .metallic) {
                     viewModel.hardDrop()
                 }
                 Spacer()
-                    .frame(width: 84)
+                    .frame(width: 88)
             }
         }
         .padding(.top, 24)
@@ -444,7 +444,7 @@ private struct CellView: View {
                 .padding(1)
 
                 if let specialKind = cell.specialKind {
-                    SpecialBadgeView(kind: specialKind)
+                    SpecialBadgeView(kind: specialKind, tone: cell.badgeTone)
                         .frame(width: 11, height: 11)
                 }
             } else {
@@ -594,18 +594,47 @@ private struct LineClearEffectView: View {
 }
 
 private struct IconControlButton: View {
+    enum StyleVariant {
+        case arcade
+        case metallic
+    }
+
     let systemImage: String
     var width: CGFloat = 64
     var height: CGFloat = 52
+    var style: StyleVariant = .arcade
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: style == .metallic ? 28 : 20, weight: .bold))
                 .frame(width: width, height: height)
         }
-        .buttonStyle(ArcadeControlButtonStyle(width: width, height: height))
+        .buttonStyle(buttonStyle)
+    }
+
+    private var buttonStyle: some ButtonStyle {
+        switch style {
+        case .arcade:
+            return AnyButtonStyle(ArcadeControlButtonStyle(width: width, height: height))
+        case .metallic:
+            return AnyButtonStyle(MetallicControlButtonStyle(width: width, height: height))
+        }
+    }
+}
+
+private struct AnyButtonStyle: ButtonStyle {
+    private let makeBodyClosure: (Configuration) -> AnyView
+
+    init<S: ButtonStyle>(_ style: S) {
+        makeBodyClosure = { configuration in
+            AnyView(style.makeBody(configuration: configuration))
+        }
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        makeBodyClosure(configuration)
     }
 }
 
@@ -664,6 +693,102 @@ private struct ArcadeControlButtonStyle: ButtonStyle {
                 y: configuration.isPressed ? 1 : 6
             )
             .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+            .frame(width: width, height: height)
+    }
+}
+
+private struct MetallicControlButtonStyle: ButtonStyle {
+    let width: CGFloat
+    let height: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        let isPressed = configuration.isPressed
+
+        return configuration.label
+            .foregroundStyle(
+                LinearGradient(
+                    colors: isPressed
+                        ? [Color.black.opacity(0.88), Color.black.opacity(0.62)]
+                        : [Color.black.opacity(0.82), Color.black.opacity(0.56)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .shadow(color: .white.opacity(isPressed ? 0.08 : 0.14), radius: 0, x: 0, y: 1)
+            .background {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: isPressed
+                                ? [
+                                    Color.white.opacity(0.82),
+                                    Color(red: 0.74, green: 0.75, blue: 0.77),
+                                    Color(red: 0.56, green: 0.57, blue: 0.6)
+                                ]
+                                : [
+                                    Color.white.opacity(0.94),
+                                    Color(red: 0.79, green: 0.8, blue: 0.82),
+                                    Color(red: 0.58, green: 0.59, blue: 0.62)
+                                ],
+                            center: .topLeading,
+                            startRadius: 4,
+                            endRadius: max(width, height) * 0.7
+                        )
+                    )
+                    .overlay(
+                        Circle()
+                            .fill(
+                                AngularGradient(
+                                    colors: [
+                                        Color.white.opacity(0.26),
+                                        Color.black.opacity(0.08),
+                                        Color.white.opacity(0.22),
+                                        Color.black.opacity(0.08),
+                                        Color.white.opacity(0.26)
+                                    ],
+                                    center: .center
+                                )
+                            )
+                            .blendMode(.overlay)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.black.opacity(0.2), lineWidth: 1.2)
+                    )
+                    .overlay(
+                        Circle()
+                            .inset(by: 5)
+                            .stroke(Color.white.opacity(isPressed ? 0.18 : 0.28), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.32), radius: isPressed ? 8 : 12, y: isPressed ? 3 : 7)
+            }
+            .background {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: isPressed
+                                ? [
+                                    Color(red: 1.0, green: 0.9, blue: 0.32).opacity(0.5),
+                                    Color(red: 1.0, green: 0.83, blue: 0.2).opacity(0.24),
+                                    .clear
+                                ]
+                                : [Color.white.opacity(0.08), .clear],
+                            center: .center,
+                            startRadius: 6,
+                            endRadius: max(width, height) * 0.8
+                        )
+                    )
+                    .scaleEffect(isPressed ? 1.16 : 1.0)
+                    .blur(radius: isPressed ? 12 : 4)
+            }
+            .overlay {
+                Circle()
+                    .stroke(Color(red: 1.0, green: 0.86, blue: 0.26).opacity(isPressed ? 0.55 : 0.0), lineWidth: 2)
+                    .blur(radius: isPressed ? 3 : 0)
+                    .padding(1)
+            }
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(.easeOut(duration: 0.08), value: isPressed)
             .frame(width: width, height: height)
     }
 }
@@ -1120,12 +1245,13 @@ private struct FlashCongratulationsView: View {
 
 private struct SpecialBadgeView: View {
     let kind: SpecialBlockKind
+    var tone: BadgeTone = .light
 
     var body: some View {
         Group {
             switch kind {
             case .diamond:
-                DiamondGemView()
+                DiamondGemView(tone: tone)
             case .gold:
                 GoldBarsView()
             case .silver:
@@ -1133,6 +1259,11 @@ private struct SpecialBadgeView: View {
             }
         }
     }
+}
+
+private enum BadgeTone {
+    case light
+    case dark
 }
 
 private struct GoldBarsView: View {
@@ -1296,51 +1427,79 @@ private struct SilverBarShape: Shape {
 }
 
 private struct DiamondGemView: View {
+    let tone: BadgeTone
+
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let height = proxy.size.height
 
             ZStack {
-                DiamondFacetFillView()
+                DiamondFacetFillView(tone: tone)
                     .overlay(
                         DiamondOuterShape()
-                            .stroke(Color(red: 0.08, green: 0.16, blue: 0.3).opacity(0.85), lineWidth: max(0.55, width * 0.06))
+                            .stroke(outlineColor, lineWidth: max(0.55, width * 0.06))
                     )
-                    .shadow(color: Color(red: 0.44, green: 0.8, blue: 1.0).opacity(0.65), radius: width * 0.18)
+                    .shadow(color: glowColor.opacity(0.72), radius: width * 0.2)
 
                 RoundedRectangle(cornerRadius: width * 0.08, style: .continuous)
-                    .fill(Color.white.opacity(0.28))
+                    .fill(highlightColor.opacity(tone == .light ? 0.28 : 0.18))
                     .frame(width: width * 0.54, height: height * 0.1)
                     .offset(x: -width * 0.08, y: -height * 0.18)
 
                 SparkleView()
-                    .fill(Color(red: 0.84, green: 0.92, blue: 1.0))
+                    .fill(sparkleColor)
                     .frame(width: width * 0.22, height: height * 0.22)
                     .offset(x: -width * 0.42, y: -height * 0.34)
 
                 SparkleView()
-                    .fill(Color(red: 0.87, green: 0.94, blue: 1.0))
+                    .fill(sparkleColor.opacity(0.95))
                     .frame(width: width * 0.18, height: height * 0.18)
                     .offset(x: width * 0.2, y: width * 0.18)
 
                 SparkleView()
-                    .fill(Color(red: 0.87, green: 0.94, blue: 1.0))
+                    .fill(sparkleColor.opacity(0.9))
                     .frame(width: width * 0.1, height: height * 0.1)
                     .offset(x: width * 0.42, y: width * 0.05)
             }
         }
     }
+
+    private var outlineColor: Color {
+        tone == .light
+            ? Color(red: 0.08, green: 0.16, blue: 0.3).opacity(0.88)
+            : Color.white.opacity(0.82)
+    }
+
+    private var glowColor: Color {
+        tone == .light
+            ? Color(red: 0.44, green: 0.8, blue: 1.0)
+            : Color(red: 0.12, green: 0.22, blue: 0.42)
+    }
+
+    private var sparkleColor: Color {
+        tone == .light
+            ? Color(red: 0.84, green: 0.92, blue: 1.0)
+            : Color.white.opacity(0.96)
+    }
+
+    private var highlightColor: Color {
+        tone == .light
+            ? Color.white
+            : Color(red: 0.72, green: 0.84, blue: 1.0)
+    }
 }
 
 private struct DiamondFacetFillView: View {
+    let tone: BadgeTone
+
     var body: some View {
         GeometryReader { proxy in
             let rect = CGRect(origin: .zero, size: proxy.size)
 
             ZStack {
                 DiamondOuterShape()
-                    .fill(Color(red: 0.33, green: 0.67, blue: 0.96))
+                    .fill(baseColor)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.minX, y: rect.height * 0.4),
@@ -1348,7 +1507,7 @@ private struct DiamondFacetFillView: View {
                     CGPoint(x: rect.width * 0.42, y: rect.height * 0.22),
                     CGPoint(x: rect.width * 0.3, y: rect.height * 0.4)
                 ])
-                .fill(Color(red: 0.72, green: 0.83, blue: 0.95))
+                .fill(facetA)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.18, y: rect.height * 0.22),
@@ -1356,7 +1515,7 @@ private struct DiamondFacetFillView: View {
                     CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.3, y: rect.height * 0.4)
                 ])
-                .fill(Color(red: 0.81, green: 0.88, blue: 0.97))
+                .fill(facetB)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.42, y: rect.height * 0.22),
@@ -1364,7 +1523,7 @@ private struct DiamondFacetFillView: View {
                     CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.38, y: rect.height * 0.4)
                 ])
-                .fill(Color(red: 0.31, green: 0.61, blue: 0.9))
+                .fill(facetC)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.58, y: rect.height * 0.22),
@@ -1372,7 +1531,7 @@ private struct DiamondFacetFillView: View {
                     CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.62, y: rect.height * 0.4)
                 ])
-                .fill(Color(red: 0.46, green: 0.67, blue: 0.9))
+                .fill(facetD)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.82, y: rect.height * 0.22),
@@ -1380,45 +1539,57 @@ private struct DiamondFacetFillView: View {
                     CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.62, y: rect.height * 0.4)
                 ])
-                .fill(Color(red: 0.73, green: 0.82, blue: 0.95))
+                .fill(facetE)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.minX, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.3, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.5, y: rect.maxY)
                 ])
-                .fill(Color(red: 0.4, green: 0.68, blue: 0.93))
+                .fill(facetF)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.3, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.5, y: rect.maxY)
                 ])
-                .fill(Color(red: 0.19, green: 0.54, blue: 0.9))
+                .fill(facetG)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.5, y: rect.maxY)
                 ])
-                .fill(Color(red: 0.47, green: 0.67, blue: 0.89))
+                .fill(facetH)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.5, y: rect.maxY)
                 ])
-                .fill(Color(red: 0.13, green: 0.48, blue: 0.92))
+                .fill(facetI)
 
                 DiamondFacetShape(points: [
                     CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
                     CGPoint(x: rect.maxX, y: rect.height * 0.4),
                     CGPoint(x: rect.width * 0.5, y: rect.maxY)
                 ])
-                .fill(Color(red: 0.29, green: 0.61, blue: 0.94))
+                .fill(facetJ)
             }
         }
     }
+
+    private var baseColor: Color { tone == .light ? Color(red: 0.33, green: 0.67, blue: 0.96) : Color(red: 0.1, green: 0.24, blue: 0.46) }
+    private var facetA: Color { tone == .light ? Color(red: 0.72, green: 0.83, blue: 0.95) : Color(red: 0.28, green: 0.46, blue: 0.72) }
+    private var facetB: Color { tone == .light ? Color(red: 0.81, green: 0.88, blue: 0.97) : Color(red: 0.42, green: 0.58, blue: 0.84) }
+    private var facetC: Color { tone == .light ? Color(red: 0.31, green: 0.61, blue: 0.9) : Color(red: 0.14, green: 0.34, blue: 0.62) }
+    private var facetD: Color { tone == .light ? Color(red: 0.46, green: 0.67, blue: 0.9) : Color(red: 0.22, green: 0.4, blue: 0.68) }
+    private var facetE: Color { tone == .light ? Color(red: 0.73, green: 0.82, blue: 0.95) : Color(red: 0.48, green: 0.64, blue: 0.86) }
+    private var facetF: Color { tone == .light ? Color(red: 0.4, green: 0.68, blue: 0.93) : Color(red: 0.2, green: 0.42, blue: 0.74) }
+    private var facetG: Color { tone == .light ? Color(red: 0.19, green: 0.54, blue: 0.9) : Color(red: 0.08, green: 0.28, blue: 0.56) }
+    private var facetH: Color { tone == .light ? Color(red: 0.47, green: 0.67, blue: 0.89) : Color(red: 0.24, green: 0.44, blue: 0.7) }
+    private var facetI: Color { tone == .light ? Color(red: 0.13, green: 0.48, blue: 0.92) : Color(red: 0.06, green: 0.24, blue: 0.5) }
+    private var facetJ: Color { tone == .light ? Color(red: 0.29, green: 0.61, blue: 0.94) : Color(red: 0.12, green: 0.34, blue: 0.62) }
 }
 
 private struct DiamondOuterShape: Shape {
@@ -1473,11 +1644,21 @@ private struct SparkleView: Shape {
 
 private extension BoardCell {
     var fillColor: Color {
-        specialKind?.fillColor ?? kind.fillColor
+        if specialKind == .diamond {
+            return kind.fillColor
+        }
+        return specialKind?.fillColor ?? kind.fillColor
     }
 
     var shadowColor: Color {
-        specialKind?.shadowColor ?? kind.shadowColor
+        if specialKind == .diamond {
+            return kind.shadowColor
+        }
+        return specialKind?.shadowColor ?? kind.shadowColor
+    }
+
+    var badgeTone: BadgeTone {
+        kind.isBright ? .dark : .light
     }
 }
 
@@ -1528,6 +1709,15 @@ private extension SpecialBlockKind {
 }
 
 private extension BlockKind {
+    var isBright: Bool {
+        switch self {
+        case .i, .o, .s, .l:
+            return true
+        case .t, .z, .j:
+            return false
+        }
+    }
+
     var fillColor: Color {
         switch self {
         case .i:
