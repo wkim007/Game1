@@ -173,6 +173,12 @@ struct ContentView: View {
     private var leftSidebar: some View {
         VStack(spacing: 10) {
             Spacer()
+            VStack(spacing: 8) {
+                SpecialCountBadge(kind: .silver, count: viewModel.snapshot.silverCount)
+                SpecialCountBadge(kind: .gold, count: viewModel.snapshot.goldCount)
+                SpecialCountBadge(kind: .diamond, count: viewModel.snapshot.diamondCount)
+            }
+            .padding(.bottom, 24)
             IconControlButton(systemImage: "list.number", width: 46, height: 46) {
                 showingRanks = true
             }
@@ -187,7 +193,7 @@ struct ContentView: View {
             }
             Spacer()
         }
-        .frame(width: 52)
+        .frame(width: 58)
     }
 
     private var rightSidebar: some View {
@@ -333,7 +339,7 @@ struct ContentView: View {
 }
 
 private struct BoardView: View {
-    let board: [[BlockKind?]]
+    let board: [[BoardCell?]]
 
     var body: some View {
         GeometryReader { proxy in
@@ -368,7 +374,7 @@ private struct BoardView: View {
                         ForEach(board.indices, id: \.self) { row in
                             HStack(spacing: 2) {
                                 ForEach(board[row].indices, id: \.self) { column in
-                                    CellView(kind: board[row][column])
+                                    CellView(cell: board[row][column])
                                         .frame(width: cellSize - 2, height: cellSize - 2)
                                 }
                             }
@@ -388,16 +394,16 @@ private struct BoardView: View {
 }
 
 private struct CellView: View {
-    let kind: BlockKind?
+    let cell: BoardCell?
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(kind == nil ? Color(red: 0.17, green: 0.19, blue: 0.25) : kind!.fillColor)
+                .fill(cell == nil ? Color(red: 0.17, green: 0.19, blue: 0.25) : cell!.fillColor)
 
-            if let kind {
+            if let cell {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .stroke(kind.shadowColor, lineWidth: 1.2)
+                    .stroke(cell.shadowColor, lineWidth: 1.2)
 
                 VStack(spacing: 0) {
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
@@ -424,7 +430,7 @@ private struct CellView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(kind.shadowColor.opacity(0.9))
+                        .fill(cell.shadowColor.opacity(0.9))
                         .frame(height: 3)
                 }
                 .padding(1)
@@ -432,10 +438,15 @@ private struct CellView: View {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(kind.shadowColor.opacity(0.9))
+                        .fill(cell.shadowColor.opacity(0.9))
                         .frame(width: 3)
                 }
                 .padding(1)
+
+                if let specialKind = cell.specialKind {
+                    SpecialBadgeView(kind: specialKind)
+                        .frame(width: 11, height: 11)
+                }
             } else {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
@@ -502,6 +513,38 @@ private struct MetricCard: View {
     }
 }
 
+private struct SpecialCountBadge: View {
+    let kind: SpecialBlockKind
+    let count: Int
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                )
+
+            SpecialBadgeView(kind: kind)
+                .frame(width: 18, height: 18)
+
+            Text("\(count)")
+                .font(.system(size: 8, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color(red: 0.15, green: 0.16, blue: 0.24), in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+                .offset(x: 5, y: -5)
+        }
+        .frame(width: 30, height: 22)
+    }
+}
+
 private struct LineClearEffectView: View {
     let effect: LineClearEffect
 
@@ -511,15 +554,32 @@ private struct LineClearEffectView: View {
                 .font(.system(size: 24, weight: .black, design: .rounded))
                 .foregroundStyle(Color(red: 1.0, green: 0.86, blue: 0.3))
 
-            Text(effect.lines == 4 ? "TETRIS" : "LINE CLEAR")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.82))
+            if effect.bonusPoints > 0 {
+                Text("BONUS +\(effect.bonusPoints)")
+                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                    .foregroundStyle(Color(red: 0.72, green: 0.94, blue: 1.0))
+
+                HStack(spacing: 8) {
+                    ForEach(Array(effect.specialKinds.enumerated()), id: \.offset) { _, kind in
+                        Image(systemName: kind.symbolName)
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(kind.symbolColor)
+                            .shadow(color: kind.symbolColor.opacity(0.7), radius: 6)
+                    }
+                }
+            } else {
+                Text(effect.lines == 4 ? "TETRIS" : "LINE CLEAR")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.82))
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(
             LinearGradient(
-                colors: [Color(red: 0.3, green: 0.18, blue: 0.42), Color(red: 0.16, green: 0.1, blue: 0.23)],
+                colors: effect.bonusPoints > 0
+                    ? [Color(red: 0.12, green: 0.42, blue: 0.56), Color(red: 0.15, green: 0.11, blue: 0.28)]
+                    : [Color(red: 0.3, green: 0.18, blue: 0.42), Color(red: 0.16, green: 0.1, blue: 0.23)],
                 startPoint: .top,
                 endPoint: .bottom
             ),
@@ -1054,6 +1114,415 @@ private struct FlashCongratulationsView: View {
             withAnimation(.easeInOut(duration: 0.24).repeatForever(autoreverses: true)) {
                 flash = true
             }
+        }
+    }
+}
+
+private struct SpecialBadgeView: View {
+    let kind: SpecialBlockKind
+
+    var body: some View {
+        Group {
+            switch kind {
+            case .diamond:
+                DiamondGemView()
+            case .gold:
+                GoldBarsView()
+            case .silver:
+                SilverBarsView()
+            }
+        }
+    }
+}
+
+private struct GoldBarsView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            ZStack {
+                GoldBarShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.98, green: 0.88, blue: 0.18),
+                                Color(red: 0.96, green: 0.66, blue: 0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .rotationEffect(.degrees(-16))
+                    .offset(x: -width * 0.15, y: height * 0.12)
+
+                GoldBarShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.93, blue: 0.26),
+                                Color(red: 0.97, green: 0.7, blue: 0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .rotationEffect(.degrees(12))
+                    .offset(x: width * 0.12, y: height * 0.02)
+
+                RoundedRectangle(cornerRadius: width * 0.06, style: .continuous)
+                    .fill(Color.white.opacity(0.28))
+                    .frame(width: width * 0.34, height: height * 0.08)
+                    .rotationEffect(.degrees(12))
+                    .offset(x: width * 0.11, y: -height * 0.03)
+
+                SparkleView()
+                    .fill(Color(red: 1.0, green: 0.92, blue: 0.22))
+                    .frame(width: width * 0.18, height: height * 0.18)
+                    .offset(x: width * 0.02, y: -height * 0.34)
+
+                SparkleView()
+                    .fill(Color(red: 1.0, green: 0.94, blue: 0.46))
+                    .frame(width: width * 0.14, height: height * 0.14)
+                    .offset(x: -width * 0.32, y: -height * 0.06)
+
+                SparkleView()
+                    .fill(Color(red: 1.0, green: 0.95, blue: 0.52))
+                    .frame(width: width * 0.12, height: height * 0.12)
+                    .offset(x: width * 0.3, y: -height * 0.08)
+            }
+            .shadow(color: Color(red: 1.0, green: 0.78, blue: 0.18).opacity(0.45), radius: width * 0.16)
+        }
+    }
+}
+
+private struct GoldBarShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let topLeft = CGPoint(x: rect.width * 0.18, y: rect.height * 0.22)
+        let topRight = CGPoint(x: rect.width * 0.72, y: rect.height * 0.22)
+        let rightEdgeTop = CGPoint(x: rect.width * 0.88, y: rect.height * 0.38)
+        let rightEdgeBottom = CGPoint(x: rect.width * 0.72, y: rect.height * 0.72)
+        let bottomRight = CGPoint(x: rect.width * 0.28, y: rect.height * 0.72)
+        let leftEdgeBottom = CGPoint(x: rect.width * 0.12, y: rect.height * 0.56)
+
+        path.move(to: topLeft)
+        path.addLine(to: topRight)
+        path.addLine(to: rightEdgeTop)
+        path.addLine(to: rightEdgeBottom)
+        path.addLine(to: bottomRight)
+        path.addLine(to: leftEdgeBottom)
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct SilverBarsView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            ZStack {
+                SilverBarShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.82, green: 0.82, blue: 0.84),
+                                Color(red: 0.63, green: 0.63, blue: 0.65)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .rotationEffect(.degrees(-12))
+                    .offset(x: -width * 0.14, y: height * 0.14)
+
+                SilverBarShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.9, green: 0.9, blue: 0.92),
+                                Color(red: 0.7, green: 0.7, blue: 0.73)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .rotationEffect(.degrees(10))
+                    .offset(x: width * 0.14, y: height * 0.03)
+
+                RoundedRectangle(cornerRadius: width * 0.05, style: .continuous)
+                    .fill(Color.white.opacity(0.35))
+                    .frame(width: width * 0.28, height: height * 0.08)
+                    .rotationEffect(.degrees(10))
+                    .offset(x: width * 0.12, y: -height * 0.03)
+
+                ForEach(0..<6, id: \.self) { index in
+                    Capsule()
+                        .fill(Color(red: 0.72, green: 0.72, blue: 0.74))
+                        .frame(width: width * 0.08, height: height * 0.02)
+                        .rotationEffect(.degrees(Double(-55 + (index * 22))))
+                        .offset(
+                            x: [-width * 0.38, -width * 0.24, 0, width * 0.24, width * 0.38, 0][index],
+                            y: [-height * 0.16, -height * 0.34, -height * 0.42, -height * 0.34, -height * 0.16, -height * 0.26][index]
+                        )
+                }
+            }
+            .shadow(color: Color.white.opacity(0.28), radius: width * 0.12)
+        }
+    }
+}
+
+private struct SilverBarShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let topLeft = CGPoint(x: rect.width * 0.2, y: rect.height * 0.2)
+        let topRight = CGPoint(x: rect.width * 0.68, y: rect.height * 0.2)
+        let rightShoulder = CGPoint(x: rect.width * 0.86, y: rect.height * 0.38)
+        let rightBottom = CGPoint(x: rect.width * 0.7, y: rect.height * 0.76)
+        let bottomRight = CGPoint(x: rect.width * 0.3, y: rect.height * 0.76)
+        let leftBottom = CGPoint(x: rect.width * 0.12, y: rect.height * 0.56)
+
+        path.move(to: topLeft)
+        path.addLine(to: topRight)
+        path.addLine(to: rightShoulder)
+        path.addLine(to: rightBottom)
+        path.addLine(to: bottomRight)
+        path.addLine(to: leftBottom)
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct DiamondGemView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+
+            ZStack {
+                DiamondFacetFillView()
+                    .overlay(
+                        DiamondOuterShape()
+                            .stroke(Color(red: 0.08, green: 0.16, blue: 0.3).opacity(0.85), lineWidth: max(0.55, width * 0.06))
+                    )
+                    .shadow(color: Color(red: 0.44, green: 0.8, blue: 1.0).opacity(0.65), radius: width * 0.18)
+
+                RoundedRectangle(cornerRadius: width * 0.08, style: .continuous)
+                    .fill(Color.white.opacity(0.28))
+                    .frame(width: width * 0.54, height: height * 0.1)
+                    .offset(x: -width * 0.08, y: -height * 0.18)
+
+                SparkleView()
+                    .fill(Color(red: 0.84, green: 0.92, blue: 1.0))
+                    .frame(width: width * 0.22, height: height * 0.22)
+                    .offset(x: -width * 0.42, y: -height * 0.34)
+
+                SparkleView()
+                    .fill(Color(red: 0.87, green: 0.94, blue: 1.0))
+                    .frame(width: width * 0.18, height: height * 0.18)
+                    .offset(x: width * 0.2, y: width * 0.18)
+
+                SparkleView()
+                    .fill(Color(red: 0.87, green: 0.94, blue: 1.0))
+                    .frame(width: width * 0.1, height: height * 0.1)
+                    .offset(x: width * 0.42, y: width * 0.05)
+            }
+        }
+    }
+}
+
+private struct DiamondFacetFillView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let rect = CGRect(origin: .zero, size: proxy.size)
+
+            ZStack {
+                DiamondOuterShape()
+                    .fill(Color(red: 0.33, green: 0.67, blue: 0.96))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.minX, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.18, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.42, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.3, y: rect.height * 0.4)
+                ])
+                .fill(Color(red: 0.72, green: 0.83, blue: 0.95))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.18, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.42, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.3, y: rect.height * 0.4)
+                ])
+                .fill(Color(red: 0.81, green: 0.88, blue: 0.97))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.42, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.58, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.38, y: rect.height * 0.4)
+                ])
+                .fill(Color(red: 0.31, green: 0.61, blue: 0.9))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.58, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.82, y: rect.height * 0.22),
+                    CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.62, y: rect.height * 0.4)
+                ])
+                .fill(Color(red: 0.46, green: 0.67, blue: 0.9))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.82, y: rect.height * 0.22),
+                    CGPoint(x: rect.maxX, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.62, y: rect.height * 0.4)
+                ])
+                .fill(Color(red: 0.73, green: 0.82, blue: 0.95))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.minX, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.3, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.5, y: rect.maxY)
+                ])
+                .fill(Color(red: 0.4, green: 0.68, blue: 0.93))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.3, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.5, y: rect.maxY)
+                ])
+                .fill(Color(red: 0.19, green: 0.54, blue: 0.9))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.38, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.5, y: rect.maxY)
+                ])
+                .fill(Color(red: 0.47, green: 0.67, blue: 0.89))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.62, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.5, y: rect.maxY)
+                ])
+                .fill(Color(red: 0.13, green: 0.48, blue: 0.92))
+
+                DiamondFacetShape(points: [
+                    CGPoint(x: rect.width * 0.7, y: rect.height * 0.4),
+                    CGPoint(x: rect.maxX, y: rect.height * 0.4),
+                    CGPoint(x: rect.width * 0.5, y: rect.maxY)
+                ])
+                .fill(Color(red: 0.29, green: 0.61, blue: 0.94))
+            }
+        }
+    }
+}
+
+private struct DiamondOuterShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let topLeft = CGPoint(x: rect.width * 0.18, y: rect.height * 0.22)
+        let topRight = CGPoint(x: rect.width * 0.82, y: rect.height * 0.22)
+        let midLeft = CGPoint(x: rect.minX, y: rect.height * 0.4)
+        let midRight = CGPoint(x: rect.maxX, y: rect.height * 0.4)
+        let bottom = CGPoint(x: rect.width * 0.5, y: rect.maxY)
+
+        var path = Path()
+        path.move(to: topLeft)
+        path.addLine(to: topRight)
+        path.addLine(to: midRight)
+        path.addLine(to: bottom)
+        path.addLine(to: midLeft)
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct DiamondFacetShape: Shape {
+    let points: [CGPoint]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct SparkleView: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX + rect.width * 0.18, y: rect.midY - rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.midX + rect.width * 0.18, y: rect.midY + rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX - rect.width * 0.18, y: rect.midY + rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.midX - rect.width * 0.18, y: rect.midY - rect.height * 0.18))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private extension BoardCell {
+    var fillColor: Color {
+        specialKind?.fillColor ?? kind.fillColor
+    }
+
+    var shadowColor: Color {
+        specialKind?.shadowColor ?? kind.shadowColor
+    }
+}
+
+private extension SpecialBlockKind {
+    var symbolName: String {
+        switch self {
+        case .silver:
+            return "seal.fill"
+        case .gold:
+            return "medal.fill"
+        case .diamond:
+            return "diamond.fill"
+        }
+    }
+
+    var fillColor: Color {
+        switch self {
+        case .silver:
+            return Color(red: 0.78, green: 0.82, blue: 0.9)
+        case .gold:
+            return Color(red: 0.98, green: 0.78, blue: 0.24)
+        case .diamond:
+            return Color(red: 0.44, green: 0.96, blue: 1.0)
+        }
+    }
+
+    var shadowColor: Color {
+        switch self {
+        case .silver:
+            return Color(red: 0.42, green: 0.48, blue: 0.58)
+        case .gold:
+            return Color(red: 0.58, green: 0.36, blue: 0.08)
+        case .diamond:
+            return Color(red: 0.08, green: 0.45, blue: 0.55)
+        }
+    }
+
+    var symbolColor: Color {
+        switch self {
+        case .silver:
+            return Color.white
+        case .gold:
+            return Color(red: 1.0, green: 0.96, blue: 0.55)
+        case .diamond:
+            return Color(red: 0.9, green: 1.0, blue: 1.0)
         }
     }
 }

@@ -4,6 +4,8 @@ struct LineClearEffect: Identifiable, Equatable {
     let id = UUID()
     let points: Int
     let lines: Int
+    let bonusPoints: Int
+    let specialKinds: [SpecialBlockKind]
 }
 
 @MainActor
@@ -324,10 +326,15 @@ final class GameViewModel: ObservableObject {
                 SoundEffectPlayer.shared.play(.rotate)
             case .hardDropped:
                 SoundEffectPlayer.shared.play(.hardDrop)
-            case .lineClear(let lines):
+            case .lineClear(let lines, let bonuses):
                 SoundEffectPlayer.shared.play(.lineClear)
                 HapticManager.shared.playLineClear(lines: lines)
-                showLineClearEffect(points: max(scoreDelta, 0), lines: lines)
+                showLineClearEffect(
+                    points: max(scoreDelta, 0),
+                    lines: lines,
+                    bonusPoints: bonuses.reduce(0) { $0 + $1.points },
+                    specialKinds: bonuses.map(\.kind)
+                )
             case .gameOver:
                 SoundEffectPlayer.shared.play(.gameOver)
             case .locked:
@@ -336,8 +343,13 @@ final class GameViewModel: ObservableObject {
         }
     }
 
-    private func showLineClearEffect(points: Int, lines: Int) {
-        let effect = LineClearEffect(points: points, lines: lines)
+    private func showLineClearEffect(points: Int, lines: Int, bonusPoints: Int, specialKinds: [SpecialBlockKind]) {
+        let effect = LineClearEffect(
+            points: points,
+            lines: lines,
+            bonusPoints: bonusPoints,
+            specialKinds: specialKinds
+        )
         lineClearEffect = effect
 
         Task { @MainActor in
